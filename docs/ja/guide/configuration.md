@@ -1,0 +1,14 @@
+---
+title: 設定
+description: ナビゲーション、サイドバー、サイトメタ情報を設定します。
+---
+
+# 設定
+
+サイトメタ情報は `src/lib/config/site.ts` にあります。
+
+ナビゲーションは `src/lib/config/nav.ts` にあります。
+
+サイドバーのグループは `src/lib/config/sidebar.ts` にあります。
+
+これらは通常の TypeScript ファイルなので、後からフレームワークパッケージへ発展させられます。

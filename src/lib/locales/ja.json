@@ -1,0 +1,21 @@
+{
+  "code": "ja",
+  "label": "日本語",
+  "shortLabel": "日",
+  "title": "Biwa Press",
+  "description": "SvelteKit で作る VitePress 風ドキュメントフレームワーク。",
+  "getStarted": "はじめる",
+  "configuration": "設定",
+  "search": "検索",
+  "searchTitle": "ドキュメントを検索",
+  "searchPlaceholder": "キーワードを入力...",
+  "searchHint": "タイトル、説明、ページ内容を検索。",
+  "searchNoResults": "結果が見つかりません。",
+  "eyebrow": "SvelteKit ドキュメントフレームワークスターター",
+  "headline": "Markdown で美しい SvelteKit ドキュメントを作成。",
+  "intro": "SvelteKit、Tailwind CSS 4、Bits UI、mdsvex、静的出力で VitePress 風のドキュメントサイトを構築。",
+  "guide": "ガイド",
+  "gettingStarted": "はじめる",
+  "reference": "リファレンス",
+  "cli": "CLI"
+}

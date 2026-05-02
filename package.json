@@ -1,0 +1,33 @@
+{
+  "name": "biwa-press",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "format": "prettier --write .",
+    "download:fonts": "node scripts/download-fonts.mjs"
+  },
+  "dependencies": {
+    "bits-ui": "^2.0.0"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-static": "^3.0.0",
+    "@sveltejs/kit": "^2.0.0",
+    "@sveltejs/vite-plugin-svelte": "^5.0.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/node": "^22.0.0",
+    "google-fonts-webpack-plugin": "^0.4.4",
+    "mdsvex": "^0.12.0",
+    "prettier": "^3.0.0",
+    "shiki": "^1.0.0",
+    "svelte": "^5.0.0",
+    "svelte-check": "^4.0.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^6.0.0"
+  }
+}

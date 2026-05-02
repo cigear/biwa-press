@@ -1,0 +1,21 @@
+{
+  "code": "en",
+  "label": "English",
+  "shortLabel": "EN",
+  "title": "Biwa Press",
+  "description": "A VitePress-like docs framework powered by SvelteKit.",
+  "getStarted": "Get Started",
+  "configuration": "Configuration",
+  "search": "Search",
+  "searchTitle": "Search docs",
+  "searchPlaceholder": "Type to search...",
+  "searchHint": "Search titles, descriptions, and page content.",
+  "searchNoResults": "No results found.",
+  "eyebrow": "SvelteKit docs framework starter",
+  "headline": "Markdown to beautiful SvelteKit docs.",
+  "intro": "Build a VitePress-like documentation site with SvelteKit, Tailwind CSS 4, Bits UI, mdsvex, and static output.",
+  "guide": "Guide",
+  "gettingStarted": "Getting Started",
+  "reference": "Reference",
+  "cli": "CLI"
+}

@@ -1,0 +1,21 @@
+{
+  "code": "zh",
+  "label": "中文",
+  "shortLabel": "中",
+  "title": "Biwa Press",
+  "description": "基于 SvelteKit 的类 VitePress 文档框架。",
+  "getStarted": "快速开始",
+  "configuration": "配置",
+  "search": "搜索",
+  "searchTitle": "搜索文档",
+  "searchPlaceholder": "输入关键词...",
+  "searchHint": "搜索标题、描述和页面正文。",
+  "searchNoResults": "没有找到结果。",
+  "eyebrow": "SvelteKit 文档框架起点",
+  "headline": "用 Markdown 构建漂亮的 SvelteKit 文档。",
+  "intro": "使用 SvelteKit、Tailwind CSS 4、Bits UI、mdsvex 和静态输出，构建一个类似 VitePress 的文档站。",
+  "guide": "指南",
+  "gettingStarted": "快速开始",
+  "reference": "参考",
+  "cli": "CLI"
+}
