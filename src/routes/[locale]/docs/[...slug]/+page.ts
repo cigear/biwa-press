@@ -1,10 +1,11 @@
 import { error } from '@sveltejs/kit';
+import type { PageLoad } from './$types';
 import { getDocEntries, loadDoc } from '$lib/docs';
 import { isLocale } from '$lib/config/locales';
 
 export const prerender = true;
 
-export async function load({ params }) {
+export const load: PageLoad = async ({ params }) => {
   const locale = params.locale;
 
   if (!isLocale(locale)) {
@@ -12,9 +13,12 @@ export async function load({ params }) {
   }
 
   const slug = params.slug ?? '';
+  const doc = await loadDoc(locale, slug);
+
   return {
     locale,
-    ...(await loadDoc(locale, slug))
+    ...doc,
+    toc: doc.metadata?.toc ?? [] 
   };
 }
 

@@ -6,12 +6,21 @@
   let {
     data
   }: {
-    data: { locale: Locale; component: Component; metadata: Record<string, string> };
+    data: {
+      locale: Locale;
+      component: Component;
+      metadata: Record<string, any>;
+      toc: any[];
+    };
   } = $props();
 
   const Content = $derived(data.component);
 </script>
 
-<DocLayout locale={data.locale} metadata={data.metadata}>
+<DocLayout
+  locale={data.locale}
+  metadata={data.metadata}
+  toc={data.toc}
+>
   <Content />
 </DocLayout>

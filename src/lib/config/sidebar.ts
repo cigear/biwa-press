@@ -1,17 +1,14 @@
-import type { Locale } from './locales';
+import type { Locale } from '$lib/config/locales';
+import { scanDocs } from '$lib/docs';
 
-export function getSidebar(locale: Locale) {
-  return [
-    {
-      title: 'guide',
-      items: [
-        { title: 'gettingStarted', href: `/${locale}/docs/guide/getting-started` },
-        { title: 'configuration', href: `/${locale}/docs/guide/configuration` }
-      ]
-    },
-    {
-      title: 'reference',
-      items: [{ title: 'cli', href: `/${locale}/docs/reference/cli` }]
-    }
-  ];
+export async function getSidebar(locale: Locale) {
+  const groups = await scanDocs(locale);
+
+  return groups.map((group) => ({
+    title: group.title, // 已经是 Title Case
+    items: group.items.map((item) => ({
+      title: item.title,
+      href: `/${locale}/docs/${item.slug}`
+    }))
+  }));
 }
