@@ -8,20 +8,29 @@ import { getDocMetadata } from '$lib/docs/metadata';
 // 扫描所有 Markdown 文件
 const modules = import.meta.glob<MdsvexModule>('../../docs/**/*.md');
 
-/**
- * 加载单个文档（组件 + metadata + toc）
- * 支持：
- *   /guide.md
- *   /guide/index.md
- */
+/* ---------------------------------------------
+ * Group 类型（★ 导出给 Header / Sidebar 使用）
+ * --------------------------------------------- */
+export type Group = {
+  dir: string;
+  title: string;
+  order: number;
+  items: {
+    slug: string;
+    title: string;
+    order: number;
+  }[];
+};
+
+/* ---------------------------------------------
+ * loadDoc
+ * --------------------------------------------- */
 export async function loadDoc(locale: Locale, slug: string) {
   const normalized = slug === '' ? 'index' : slug;
 
-  // 1) 尝试 docs/{locale}/{slug}.md
   let path = `../../docs/${locale}/${normalized}.md`;
   let loader = modules[path];
 
-  // 2) 尝试 docs/{locale}/{slug}/index.md
   if (!loader) {
     path = `../../docs/${locale}/${normalized}/index.md`;
     loader = modules[path];
@@ -41,9 +50,9 @@ export async function loadDoc(locale: Locale, slug: string) {
   };
 }
 
-/**
- * 获取所有文档条目（用于 Sidebar / Nav 自动生成）
- */
+/* ---------------------------------------------
+ * getDocEntries
+ * --------------------------------------------- */
 export function getDocEntries() {
   return Object.keys(modules)
     .map((path) => {
@@ -54,35 +63,21 @@ export function getDocEntries() {
 
       let slug = slugParts.join('/');
 
-      // guide/index → guide
-      if (slug.endsWith('/index')) {
-        slug = slug.replace(/\/index$/, '');
-      }
-
-      // 根 index.md → ""
+      if (slug.endsWith('/index')) slug = slug.replace(/\/index$/, '');
       if (slug === 'index') slug = '';
 
       return { locale, slug };
     })
-    .filter((entry): entry is { locale: Locale; slug: string } => entry !== null);
+    .filter((e): e is { locale: Locale; slug: string } => e !== null);
 }
 
-/**
- * 扫描所有文档（Sidebar 自动生成）
- * 支持目录 index.md
- */
-export async function scanDocs(locale: Locale) {
+/* ---------------------------------------------
+ * scanDocs(locale) → Promise<Group[]>
+ * --------------------------------------------- */
+export async function scanDocs(locale: Locale): Promise<Group[]> {
   const entries = getDocEntries().filter((e) => e.locale === locale);
 
-  const groups: Record<
-    string,
-    {
-      dir: string;
-      title: string;
-      order: number;
-      items: { slug: string; title: string; order: number }[];
-    }
-  > = {};
+  const groups: Record<string, Group> = {};
 
   for (const entry of entries) {
     const slug = entry.slug;
@@ -93,7 +88,6 @@ export async function scanDocs(locale: Locale) {
 
     const fileSlug = slug;
 
-    // ★★★ 支持目录 index.md（与 loadDoc 完全一致）★★★
     let path = `../../docs/${locale}/${slug || 'index'}.md`;
     let loader = modules[path];
 
@@ -124,7 +118,6 @@ export async function scanDocs(locale: Locale) {
       };
     }
 
-    // title 处理
     const localizedTitle =
       (metadata[`title_${locale}` as keyof DocMetadata] as string | undefined) ??
       metadata.title ??
@@ -134,7 +127,6 @@ export async function scanDocs(locale: Locale) {
         .replace(/-/g, ' ')
         .replace(/\b\w/g, (c) => c.toUpperCase());
 
-    // ★★★ 数字排序：01.xxx.md → order = 1 ★★★
     let numericOrder = 999;
     const fileName = fileSlug.split('/').pop()!;
     const match = fileName.match(/^(\d+)[.-]/);
@@ -147,38 +139,42 @@ export async function scanDocs(locale: Locale) {
     });
   }
 
-  // ★★★ 读取每个 group 的 index.md 的 order（VitePress 同款）★★★
   for (const group of Object.values(groups)) {
     const indexItem = group.items.find((item) => item.slug === group.dir);
     group.order = indexItem?.order ?? 999;
   }
 
-  // ★★★ 组内排序：index.md（slug === group.dir）永远排最前 ★★★
   for (const group of Object.values(groups)) {
     group.items.sort((a, b) => {
-      // 首页（group/index.md）
       if (a.slug === group.dir && b.slug !== group.dir) return -1;
       if (a.slug !== group.dir && b.slug === group.dir) return 1;
-
-      // 其他按 order 排序
       return a.order - b.order;
     });
   }
 
-  // ★★★ 分组排序：按 group.order（不按中文标题）★★★
-  const sortedGroups = Object.values(groups).sort((a, b) => {
+  return Object.values(groups).sort((a, b) => {
     if (a.dir === 'home') return -1;
     if (b.dir === 'home') return 1;
     return a.order - b.order;
   });
-
-  return sortedGroups;
 }
 
-/**
- * 自动 Nav（顶级目录）
- * 不加载文件，完全同步
- */
+/* ---------------------------------------------
+ * getSidebar(locale) → 同步返回 Group[]
+ * （★ Header / Sidebar 可以直接 each）
+ * --------------------------------------------- */
+const sidebarCache = new Map<Locale, Group[]>();
+
+export async function getSidebar(locale: Locale): Promise<Group[]> {
+  if (!sidebarCache.has(locale)) {
+    sidebarCache.set(locale, await scanDocs(locale));
+  }
+  return sidebarCache.get(locale)!;
+}
+
+/* ---------------------------------------------
+ * getNav
+ * --------------------------------------------- */
 export function getNav(locale: Locale) {
   const entries = getDocEntries().filter((e) => e.locale === locale);
 
