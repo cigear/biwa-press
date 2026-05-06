@@ -1,6 +1,7 @@
 ---
 title: Configuration
 description: Configure navigation, sidebar, and site metadata.
+order: 2
 ---
 
 # Configuration

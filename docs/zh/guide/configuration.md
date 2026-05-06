@@ -1,6 +1,7 @@
 ---
 title: 配置
 description: 配置导航、侧边栏和站点元信息。
+order: 2
 ---
 
 # 配置

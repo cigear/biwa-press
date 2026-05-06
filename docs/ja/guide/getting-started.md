@@ -1,6 +1,7 @@
 ---
 title: はじめる
 description: 最初の Biwa Press ドキュメントサイトを作成して実行します。
+order: 1
 ---
 
 # はじめる

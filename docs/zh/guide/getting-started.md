@@ -1,6 +1,7 @@
 ---
 title: 快速开始
 description: 创建并运行第一个 Biwa Press 文档站。
+order: 1
 ---
 
 # 快速开始
