@@ -3,54 +3,105 @@
   import { getSidebar, type Group } from "$lib/docs"; // ★ 导入 Group 类型 + getSidebar
   import { site } from "$lib/config/site";
   import SearchDialog from "./SearchDialog.svelte";
-  import { Languages, ChevronDown, Check } from "@lucide/svelte"; // 导入 Lucide 图标
-  import { fly } from "svelte/transition";
+  import { Languages, ChevronDown, Check, ChevronRight } from "@lucide/svelte"; // 导入 Lucide 图标
+  import { fly, fade } from "svelte/transition";
   import { page } from "$app/stores"; // 导入 page 存储
+  import { goto } from "$app/navigation"; // 导入导航函数
 
   // ★ 关键：用 props 常量 + 泛型，导出组件 props 类型
   const props = $props<{ locale: Locale }>();
   const locale = $derived(props.locale);
 
   const currentPath = $derived($page.url.pathname); // 获取当前页面路径
+
   // 顶部导航（同步）
   const currentLocale = $derived(getLocaleConfig(locale));
 
   let groups: Group[] = $state([]);
 
+  // 响应式加载：当 locale 变化时，自动重新获取侧边栏数据
   $effect(() => {
-    loadSidebar();
+    getSidebar(locale).then(res => groups = res);
   });
 
-  async function loadSidebar() {
-    groups = await getSidebar(locale);
-  }
   let open = $state(false);
   let isLangOpen = $state(false);
+
+  // 追踪侧边栏分组展开状态
+  let expandedGroups = $state<Record<string, boolean>>({});
+
+  function handleGroupClick(item: Group) {
+    expandedGroups[item.title] = !expandedGroups[item.title];
+  }
+
+  // 自动展开包含当前激活页面的分组
+  $effect(() => {
+    const path = currentPath;
+    if (groups.length === 0) return;
+
+    function checkActive(items: Group[]): boolean {
+      let isActive = false;
+      for (const item of items) {
+        const href = item.slug ? `/${locale}/docs/${item.slug}` : undefined;
+        if (href === path) isActive = true;
+        if (item.items && checkActive(item.items)) {
+          expandedGroups[item.title] = true;
+          isActive = true;
+        }
+      }
+      return isActive;
+    }
+    checkActive(groups);
+  });
 
   // 递归渲染函数
   // svelte 5 snippet 用于递归
 </script>
 
 {#snippet navItem(item: Group, depth: number)}
-  <div class="mb-3" style="margin-left: {depth > 0 ? '0.75rem' : '0'}">
-    {#if item.slug}
-      {@const href = `/${locale}/docs/${item.slug}`}
-      <a
-        {href}
-        class="block py-1 text-sm transition-colors {currentPath === href
-          ? 'font-bold text-zinc-950 bg-zinc-100 rounded-md py-1 px-2 -mx-2' // Active styles
-          : 'text-zinc-600 hover:text-zinc-950'}"
-        onclick={() => (open = false)}
-      >
-        {item.title}
-      </a>
-    {:else}
-      <h3 class="py-1 text-xs font-bold uppercase tracking-wider text-zinc-400">
-        {item.title}
-      </h3>
-    {/if}
-    {#if item.items}
-      <div class="border-l border-zinc-100 pl-3">
+  {@const hasChildren = item.items && item.items.length > 0}
+  <div class="mb-1" style="margin-left: {depth > 0 ? '0.75rem' : '0'}">
+    <div class="flex items-center justify-between gap-2">
+      {#if item.slug}
+        {@const href = `/${locale}/docs/${item.slug}`}
+        <a
+          {href}
+          class="flex-1 py-1.5 text-sm transition-colors {currentPath === href
+            ? 'font-bold text-zinc-950 bg-zinc-100 rounded-md px-2 -mx-2' // Active styles
+            : 'text-zinc-600 hover:text-zinc-950'}"
+          onclick={() => (open = false)}
+        >
+          {item.title}
+        </a>
+      {:else if hasChildren}
+        <button
+          class="flex-1 text-left py-1.5 text-xs font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-600 transition-colors"
+          onclick={() => handleGroupClick(item)}
+        >
+          {item.title}
+        </button>
+      {:else}
+        <h3 class="py-1.5 text-xs font-bold uppercase tracking-wider text-zinc-400">
+          {item.title}
+        </h3>
+      {/if}
+
+      {#if hasChildren}
+        <button
+          class="p-1 text-zinc-400 hover:text-zinc-950 transition-colors shrink-0"
+          onclick={() => handleGroupClick(item)}
+          aria-label="Toggle group"
+        >
+          <ChevronRight
+            size={14}
+            class="transition-transform duration-200 {expandedGroups[item.title] ? 'rotate-90' : 'rotate-0'}"
+          />
+        </button>
+      {/if}
+    </div>
+
+    {#if hasChildren && expandedGroups[item.title]}
+      <div class="mt-1 border-l border-zinc-100 pl-3">
         {#each item.items as subItem}
           {@render navItem(subItem, depth + 1)}
         {/each}
@@ -60,7 +111,7 @@
 {/snippet}
 
 <header
-  class="sticky top-0 z-30 border-b border-zinc-200 bg-white/90 backdrop-blur"
+  class="sticky top-0 z-30 border-b border-zinc-200 bg-white"
 >
   <div class="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
     <div class="flex items-center gap-4">
@@ -92,8 +143,8 @@
     </div>
 
     <div class="flex items-center gap-3 sm:gap-4">
-      <!-- 语言切换：仅桌面端显示 -->
-      <div class="relative hidden lg:block">
+      <!-- 语言切换 -->
+      <div class="relative">
         <button
           onclick={() => (isLangOpen = !isLangOpen)}
           class="relative z-61 flex cursor-pointer items-center gap-1 rounded-full border border-zinc-200 bg-white px-3 py-1 text-sm text-zinc-500 transition-colors hover:text-zinc-950 active:scale-95 sm:px-4 sm:py-1.5"
@@ -169,9 +220,10 @@
 </header>
 
 {#if open}
-  <div class="fixed inset-0 z-40 lg:hidden">
+  <div class="fixed inset-0 z-50 lg:hidden">
     <div
-      class="fixed inset-0 bg-black/50"
+      transition:fade={{ duration: 200 }}
+      class="fixed inset-0 bg-zinc-950/40"
       onclick={() => (open = false)}
       onkeydown={(e) => {
         if (e.key === "Escape" || e.key === "Enter") {
@@ -183,56 +235,35 @@
       aria-label="Close menu overlay"
     ></div>
 
-    <div class="fixed left-0 top-0 h-full w-64 bg-white p-4 shadow-lg">
-      <button
-        class="mb-4"
-        onclick={() => (open = false)}
-        aria-label="Close menu"
-      >
-        <svg
-          class="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
+    <div 
+      transition:fly={{ x: -300, duration: 300, opacity: 1 }}
+      class="fixed left-0 top-0 h-full w-72 border-r border-zinc-100 bg-white p-6 shadow-2xl"
+    >
+      <div class="flex items-center justify-between">
+        <span class="text-sm font-bold text-zinc-900">{site.title}</span>
+        <button
+          class="flex h-9 w-9 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-950"
+          onclick={() => (open = false)}
+          aria-label="Close menu"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
-      </button>
-
-      <!-- 移动端语言切换 -->
-      <div class="flex flex-col gap-6 border-b border-zinc-100 pb-6">
-        <div class="space-y-3">
-          <p class="text-xs font-bold uppercase tracking-wider text-zinc-400">
-            {locale === 'en' ? 'Switch Language' : '切换语言'}
-          </p>
-          <div class="grid grid-cols-2 gap-2">
-            {#each Object.values(locales) as item}
-              <a
-                href={`/${item.code}/docs/guide/getting-started`}
-                data-sveltekit-preload-data="off"
-                class="flex items-center justify-between rounded-md border px-3 py-2 text-sm transition-colors {item.code ===
-                locale
-                  ? 'border-zinc-950 bg-zinc-950 text-white'
-                  : 'border-zinc-100 text-zinc-600 hover:bg-zinc-50'}"
-                onclick={() => (open = false)}
-              >
-                {item.label}
-                {#if item.code === locale}
-                  <Check size={14} />
-                {/if}
-              </a>
-            {/each}
-          </div>
-        </div>
+          <svg
+            class="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
       </div>
 
       <!-- ★ 递归渲染 Sidebar groups（移动端） -->
-      <div class="mt-8">
+      <div class="mt-4">
         {#each groups as group}
           {@render navItem(group, 0)}
         {/each}

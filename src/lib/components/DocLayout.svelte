@@ -133,10 +133,10 @@
   <div class="mx-auto grid max-w-7xl grid-cols-1 px-4 lg:grid-cols-[260px_1fr_200px] lg:gap-10">
     <Sidebar {locale} />
 
-    <main class="doc-content min-w-0 py-10 lg:py-12">
+    <div class="min-w-0">
       <!-- 面包屑导航：在所有屏幕显示 -->
       {#if breadcrumbs.length > 0}
-        <nav class="mb-6 flex flex-wrap items-center gap-1.5 text-sm text-zinc-500">
+        <nav class="sticky top-14 z-20 flex flex-wrap items-center gap-1.5 border-b border-zinc-100 bg-white py-2 text-sm text-zinc-500">
           {#each breadcrumbs as crumb, i}
             {#if i > 0}
               <ChevronRight size={14} class="text-zinc-300" />
@@ -158,37 +158,39 @@
         </nav>
       {/if}
 
-      {@render children()}
+      <main class="doc-content pb-10 pt-4 lg:pb-12 lg:pt-6">
+        {@render children()}
 
-      <!-- 底部翻页导航 -->
-      <nav class="mt-16 flex items-start justify-between gap-4 border-t border-zinc-100 pt-8">
-        {#if pagination.prev}
-          <a
-            href={pagination.prev.href}
-            class="group flex flex-1 flex-col gap-1 min-w-0 transition-colors"
-          >
-            <span class="text-xs font-medium text-zinc-400">Previous</span>
-            <span class="flex items-center gap-1 text-base font-semibold text-zinc-600 transition-colors group-hover:text-zinc-950">
-              <ChevronLeft size={18} class="shrink-0 transition-transform group-hover:-translate-x-1" />
-              {pagination.prev.title}
-            </span>
-          </a>
-        {/if}
+        <!-- 底部翻页导航 -->
+        <nav class="mt-16 flex items-start justify-between gap-4 border-t border-zinc-100 pt-8">
+          {#if pagination.prev}
+            <a
+              href={pagination.prev.href}
+              class="group flex flex-1 flex-col gap-1 min-w-0 transition-colors"
+            >
+              <span class="text-xs font-medium text-zinc-400">Previous</span>
+              <span class="flex items-center gap-1 text-base font-semibold text-zinc-600 transition-colors group-hover:text-zinc-950">
+                <ChevronLeft size={18} class="shrink-0 transition-transform group-hover:-translate-x-1" />
+                {pagination.prev.title}
+              </span>
+            </a>
+          {/if}
 
-        {#if pagination.next}
-          <a
-            href={pagination.next.href}
-            class="group flex flex-1 flex-col items-end gap-1 min-w-0 transition-colors ms-auto"
-          >
-            <span class="text-xs font-medium text-zinc-400">Next</span>
-            <span class="flex items-center gap-1 text-base font-semibold text-zinc-600 transition-colors group-hover:text-zinc-950">
-              {pagination.next.title}
-              <ChevronRight size={18} class="shrink-0 transition-transform group-hover:translate-x-1" />
-            </span>
-          </a>
-        {/if}
-      </nav>
-    </main>
+          {#if pagination.next}
+            <a
+              href={pagination.next.href}
+              class="group flex flex-1 flex-col items-end gap-1 min-w-0 transition-colors ms-auto"
+            >
+              <span class="text-xs font-medium text-zinc-400">Next</span>
+              <span class="flex items-center gap-1 text-base font-semibold text-zinc-600 transition-colors group-hover:text-zinc-950">
+                {pagination.next.title}
+                <ChevronRight size={18} class="shrink-0 transition-transform group-hover:translate-x-1" />
+              </span>
+            </a>
+          {/if}
+        </nav>
+      </main>
+    </div>
 
     <aside class="py-12 lg:block">
       <DocToc items={toc} minDepth={2} maxDepth={3} />

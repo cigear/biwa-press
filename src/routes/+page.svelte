@@ -4,9 +4,22 @@
   import { site } from '$lib/config/site';
   
 
-  // 使用默认语言或从 URL 逻辑获取的语言
-  const currentViewLocale = defaultLocale;
-  const text = getLocaleConfig(currentViewLocale);
+  // 使用 $state 包装，使其在检测到浏览器语言后可以更新
+  let currentViewLocale = $state<Locale>(defaultLocale);
+  
+  // 使用 $derived 确保页面文字配置随 currentViewLocale 自动更新
+  const text = $derived(getLocaleConfig(currentViewLocale));
+
+  // Svelte 5: $effect 会在组件挂载到客户端后执行
+  $effect(() => {
+    // navigator.language 通常返回 "zh-CN" 或 "en-US"
+    const browserLang = navigator.language.split('-')[0] as Locale;
+    
+    // 如果浏览器首选语言在我们的支持列表中，则自动切换状态
+    if (locales[browserLang]) {
+      currentViewLocale = browserLang;
+    }
+  });
 </script>
 
 <svelte:head>

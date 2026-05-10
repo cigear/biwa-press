@@ -65,12 +65,12 @@
   /* 
     1. 使用 scrollbar-gutter: stable 在 HTML 层面预留滚动条位置。
        这样无论滚动条是否显示，内容区域都不会发生水平跳动。
-    2. 强制隐藏水平溢出 (overflow-x: hidden)，防止移动端弹窗锁定逻辑误加 padding 导致的“右侧白边”或多余滚动条。
+    2. 使用 overflow-x: clip 隐藏水平溢出。相比 hidden，clip 不会破坏 position: sticky 的粘性定位。
     3. 针对输入框 16px 的调整（text-base）可以防止 iOS 自动放大页面。
   */
   :global(html, body) {
     scrollbar-gutter: stable;
-    overflow-x: hidden;
+    overflow-x: clip;
     /* 确保 body 宽度不会因为缩放或锁定逻辑超过屏幕 */
     max-width: 100%;
   }

@@ -98,8 +98,8 @@
 <style>
   .biwa-toc {
     position: sticky;
-    top: 80px;
-    max-height: calc(100vh - 80px);
+    top: 100px; /* Header(56px) + Breadcrumb(~36px) + 间隙 */
+    max-height: calc(100vh - 100px);
     overflow: hidden auto;
     scrollbar-width: thin;
     font-size: 0.875rem;
