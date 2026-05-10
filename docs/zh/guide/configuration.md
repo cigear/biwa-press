@@ -13,3 +13,15 @@ order: 2
 侧边栏分组位于 `src/lib/config/sidebar.ts`。
 
 这些文件都是普通 TypeScript 文件，之后可以继续演进成真正的框架包。
+
+## javascript1
+```javascript showLineNumbers
+const hello = "Hello, World!";
+console.log(hello);
+```
+
+## javascript2
+```javascript showLineNumbers
+const hello = "Hello, World!";
+console.log(hello);
+```

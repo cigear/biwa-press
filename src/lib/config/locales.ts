@@ -16,8 +16,8 @@ export const locales = {
     searchNoResults: 'No results found.',
     eyebrow: 'SvelteKit docs framework starter',
     headline: 'Markdown to beautiful SvelteKit docs.',
-    intro:
-      'Build a VitePress-like documentation site with SvelteKit, Tailwind CSS 4, Bits UI, mdsvex, and static output.'
+    intro: 'Build a VitePress-like documentation site with SvelteKit, Tailwind CSS 4, Bits UI, mdsvex, and static output.',
+    languages: 'Languages'
   },
   zh: {
     code: 'zh',
@@ -34,8 +34,8 @@ export const locales = {
     searchNoResults: '没有找到结果。',
     eyebrow: 'SvelteKit 文档框架起点',
     headline: '用 Markdown 构建漂亮的 SvelteKit 文档。',
-    intro:
-      '使用 SvelteKit、Tailwind CSS 4、Bits UI、mdsvex 和静态输出，构建一个类似 VitePress 的文档站。'
+    intro: '使用 SvelteKit、Tailwind CSS 4、Bits UI、mdsvex 和静态输出，构建一个类似 VitePress 的文档站。',
+    languages: '语言选择'
   },
   ja: {
     code: 'ja',
@@ -52,8 +52,8 @@ export const locales = {
     searchNoResults: '結果が見つかりません。',
     eyebrow: 'SvelteKit ドキュメントフレームワークのスターター',
     headline: 'Markdown から美しい SvelteKit ドキュメントへ。',
-    intro:
-      'SvelteKit、Tailwind CSS 4、Bits UI、mdsvex、静的出力で、VitePress のようなドキュメントサイトを構築します。'
+    intro: 'SvelteKit、Tailwind CSS 4、Bits UI、mdsvex、静的出力で、VitePress のようなドキュメントサイトを構築します。',
+    languages: '言語'
   }
 } as const;
 

@@ -13,3 +13,15 @@ order: 2
 サイドバーのグループは `src/lib/config/sidebar.ts` にあります。
 
 これらは通常の TypeScript ファイルなので、後からフレームワークパッケージへ発展させられます。
+
+## javascript1
+```javascript showLineNumbers
+const hello = "Hello, World!";
+console.log(hello);
+```
+
+## javascript2
+```javascript showLineNumbers
+const hello = "Hello, World!";
+console.log(hello);
+```

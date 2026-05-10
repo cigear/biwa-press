@@ -2,22 +2,18 @@ import type { Locale } from './locales';
 
 const labels = {
   en: {
-    guide: 'Guide',
-    reference: 'Reference'
+    github: 'github',
   },
   zh: {
-    guide: '指南',
-    reference: '参考'
+    github: 'github',
   },
   ja: {
-    guide: 'ガイド',
-    reference: 'リファレンス'
+    github: 'github',
   }
 } satisfies Record<Locale, Record<string, string>>;
 
 export function getNav(locale: Locale) {
   return [
-    { title: labels[locale].guide, href: `/${locale}/docs/guide/getting-started` },
-    { title: labels[locale].reference, href: `/${locale}/docs/reference/cli` }
+    { title: labels[locale].github, href: `https://github/cigear` },
   ];
 }

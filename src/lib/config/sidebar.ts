@@ -6,9 +6,9 @@ export async function getSidebar(locale: Locale) {
 
   return groups.map((group) => ({
     title: group.title, // 已经是 Title Case
-    items: group.items.map((item) => ({
+    items: (group.items ?? []).map((item) => ({
       title: item.title,
-      href: `/${locale}/docs/${item.slug}`
+      href: `/${locale}/docs/${item.slug ?? ''}`
     }))
   }));
 }

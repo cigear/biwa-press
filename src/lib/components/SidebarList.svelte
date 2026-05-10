@@ -1,35 +1,37 @@
-<script module lang="ts">
-  export type SidebarItem = {
-    title: string;
-    href?: string;
-    children?: SidebarItem[];
-  };
+<script lang="ts">
+  import type { SidebarItem } from '$lib/docs';
+  import { page } from '$app/state';
+  import SidebarList from './SidebarList.svelte';
 
-  // ★ props はここだけで定義する（script は 1 つだけ）
-  export let items: SidebarItem[] = [];
+  let { items, locale, depth = 0 }: { items: SidebarItem[], locale: string, depth?: number } = $props();
+
+  // 获取当前激活的路径，用于高亮显示
+  let currentPath = $derived(page.url.pathname);
 </script>
 
-<ul class="space-y-2">
+<ul class={depth === 0 ? "space-y-6" : "mt-2 space-y-1 border-l border-zinc-100 ml-2 pl-4"}>
   {#each items as item}
     <li>
-      {#if item.href}
+      {#if item.slug}
+        {@const href = `/${locale}/docs/${item.slug}`}
         <a
-          href={item.href}
-          class="text-sm text-zinc-600 hover:text-zinc-950 transition"
+          {href}
+          class="block text-sm transition-colors {currentPath === href 
+            ? 'font-bold text-zinc-950 bg-zinc-100 rounded-md py-1 px-2 -mx-2' 
+            : 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-50 rounded-md py-1 px-2 -mx-2'}"
         >
           {item.title}
         </a>
       {:else}
-        <div class="text-sm font-semibold text-zinc-950 mb-1">
+        <!-- 如果没有 slug，说明是一个目录分组标题 -->
+        <h3 class="text-sm font-semibold text-zinc-900">
           {item.title}
-        </div>
+        </h3>
+      {/if}
 
-        {#if item.children && item.children.length}
-          <ul class="ml-4 border-l pl-4 space-y-2">
-            <!-- ★ Svelte 公式の自己再帰 -->
-            <svelte:self items={item.children} />
-          </ul>
-        {/if}
+      {#if item.items && item.items.length > 0}
+        <!-- 递归调用自身 -->
+        <SidebarList items={item.items} {locale} depth={depth + 1} />
       {/if}
     </li>
   {/each}

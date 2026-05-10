@@ -13,3 +13,15 @@ Navigation lives in `src/lib/config/nav.ts`.
 Sidebar groups live in `src/lib/config/sidebar.ts`.
 
 These files are plain TypeScript so your docs framework can grow into a package later.
+
+## javascript1
+```javascript showLineNumbers
+const hello = "Hello, World!";
+console.log(hello);
+```
+
+## javascript2
+```javascript showLineNumbers
+const hello = "Hello, World!";
+console.log(hello);
+```

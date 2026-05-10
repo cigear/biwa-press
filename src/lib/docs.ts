@@ -8,19 +8,18 @@ import { getDocMetadata } from '$lib/docs/metadata';
 // 扫描所有 Markdown 文件
 const modules = import.meta.glob<MdsvexModule>('../../docs/**/*.md');
 
-/* ---------------------------------------------
- * Group 类型（★ 导出给 Header / Sidebar 使用）
+/* --------------------------------------------- 
+ * 递归的 Sidebar 节点类型
  * --------------------------------------------- */
-export type Group = {
-  dir: string;
+export type SidebarItem = {
   title: string;
+  slug?: string;
+  _path: string; // 内部用于唯一匹配路径
   order: number;
-  items: {
-    slug: string;
-    title: string;
-    order: number;
-  }[];
+  items?: SidebarItem[];
 };
+
+export type Group = SidebarItem;
 
 /* ---------------------------------------------
  * loadDoc
@@ -71,92 +70,76 @@ export function getDocEntries() {
     .filter((e): e is { locale: Locale; slug: string } => e !== null);
 }
 
-/* ---------------------------------------------
- * scanDocs(locale) → Promise<Group[]>
- * --------------------------------------------- */
+/**
+ * 递归扫描文档生成树状结构
+ */
 export async function scanDocs(locale: Locale): Promise<Group[]> {
   const entries = getDocEntries().filter((e) => e.locale === locale);
-
-  const groups: Record<string, Group> = {};
+  const root: SidebarItem[] = [];
 
   for (const entry of entries) {
-    const slug = entry.slug;
-    const parts = slug.split('/');
+    const parts = entry.slug === '' ? [] : entry.slug.split('/');
 
-    let dir = parts[0];
-    if (!dir) dir = 'home';
-
-    const fileSlug = slug;
-
-    let path = `../../docs/${locale}/${slug || 'index'}.md`;
-    let loader = modules[path];
-
-    if (!loader) {
-      path = `../../docs/${locale}/${slug}/index.md`;
-      loader = modules[path];
-    }
-
+    // 查找 Loader
+    let path = `../../docs/${locale}/${entry.slug || 'index'}.md`;
+    let loader = modules[path] || modules[`../../docs/${locale}/${entry.slug}/index.md`];
     if (!loader) continue;
 
     const mod = await loader();
     const metadata = getDocMetadata(mod);
 
-    const localeData = LOCALES[locale];
+    let currentLevel = root;
+    let currentPath = '';
 
-    const groupTitle =
-      dir === 'home'
-        ? localeData.home ?? 'Home'
-        : localeData[dir as keyof typeof localeData] ??
-          dir.charAt(0).toUpperCase() + dir.slice(1);
+    // 递归构建/查找节点
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      currentPath = currentPath ? `${currentPath}/${part}` : part;
+      const isLast = i === parts.length - 1;
 
-    if (!groups[dir]) {
-      groups[dir] = {
-        dir,
-        title: groupTitle,
-        order: 999,
-        items: []
-      };
+      // 使用 _path 唯一匹配，避免重复
+      let node = currentLevel.find((n) => n._path === currentPath);
+
+      if (!node) {
+        node = {
+          title: part.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+          _path: currentPath,
+          order: 999,
+          items: []
+        };
+        currentLevel.push(node);
+      }
+
+      // 如果是当前文件对应的节点，更新其元数据
+      if (isLast) {
+        node.slug = currentPath;
+        node.title = metadata.title ?? node.title;
+        node.order = metadata.order ?? 999;
+      } else {
+        // 如果不是最后一层，继续向深层走
+        if (!node.items) node.items = [];
+        currentLevel = node.items;
+      }
     }
-
-    const localizedTitle =
-      (metadata[`title_${locale}` as keyof DocMetadata] as string | undefined) ??
-      metadata.title ??
-      fileSlug
-        .split('/')
-        .pop()!
-        .replace(/-/g, ' ')
-        .replace(/\b\w/g, (c) => c.toUpperCase());
-
-    let numericOrder = 999;
-    const fileName = fileSlug.split('/').pop()!;
-    const match = fileName.match(/^(\d+)[.-]/);
-    if (match) numericOrder = parseInt(match[1], 10);
-
-    groups[dir].items.push({
-      slug: fileSlug,
-      title: localizedTitle,
-      order: metadata.order ?? numericOrder
-    });
   }
 
-  for (const group of Object.values(groups)) {
-    const indexItem = group.items.find((item) => item.slug === group.dir);
-    group.order = indexItem?.order ?? 999;
-  }
+  // 递归排序
+  const sortRecursive = (items: SidebarItem[]) => {
+    // 优先按 order 排序，order 相同按标题字母排序
+    items.sort((a, b) => (a.order - b.order) || a.title.localeCompare(b.title));
+    for (const item of items) {
+      if (item.items) {
+        if (item.items.length === 0) {
+          delete item.items; // 清理空的 items
+        } else {
+          sortRecursive(item.items);
+        }
+      }
+    }
+  };
 
-  for (const group of Object.values(groups)) {
-    group.items.sort((a, b) => {
-      if (a.slug === group.dir && b.slug !== group.dir) return -1;
-      if (a.slug !== group.dir && b.slug === group.dir) return 1;
-      return a.order - b.order;
-    });
-  }
-
-  return Object.values(groups).sort((a, b) => {
-    if (a.dir === 'home') return -1;
-    if (b.dir === 'home') return 1;
-    return a.order - b.order;
-  });
+  sortRecursive(root);
+  return root;
 }
 
 /* ---------------------------------------------
@@ -170,20 +153,4 @@ export async function getSidebar(locale: Locale): Promise<Group[]> {
     sidebarCache.set(locale, await scanDocs(locale));
   }
   return sidebarCache.get(locale)!;
-}
-
-/* ---------------------------------------------
- * getNav
- * --------------------------------------------- */
-export function getNav(locale: Locale) {
-  const entries = getDocEntries().filter((e) => e.locale === locale);
-
-  const groups = [...new Set(entries.map((e) => e.slug.split('/')[0]))];
-
-  groups.sort((a, b) => a.localeCompare(b));
-
-  return groups.map((group) => ({
-    title: group,
-    href: `/${locale}/docs/${group}`
-  }));
 }

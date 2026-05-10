@@ -1,9 +1,12 @@
 <script lang="ts">
   import Header from '$lib/components/Header.svelte';
-  import { defaultLocale, getLocaleConfig, locales } from '$lib/config/locales';
+  import { defaultLocale, getLocaleConfig, locales, type Locale } from '$lib/config/locales';
   import { site } from '$lib/config/site';
+  
 
-  const text = getLocaleConfig(defaultLocale);
+  // 使用默认语言或从 URL 逻辑获取的语言
+  const currentViewLocale = defaultLocale;
+  const text = getLocaleConfig(currentViewLocale);
 </script>
 
 <svelte:head>
@@ -12,7 +15,8 @@
 </svelte:head>
 
 <div class="min-h-screen bg-white text-zinc-950">
-  <Header locale={defaultLocale} />
+  <!-- 3. 将响应式语言传递给 Header -->
+  <Header locale={currentViewLocale} />
 
   <main class="mx-auto max-w-5xl px-6 py-24">
     <p class="text-sm font-medium text-brand">{text.eyebrow}</p>
@@ -25,27 +29,16 @@
     <div class="mt-8 flex flex-wrap gap-3">
       <a
         class="rounded-md bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800"
-        href={`/${defaultLocale}/docs/guide/getting-started`}
+        href={`/${currentViewLocale}/docs/guide/getting-started`}
       >
         {text.getStarted}
       </a>
       <a
         class="rounded-md border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
-        href={`/${defaultLocale}/docs/guide/configuration`}
+        href={`/${currentViewLocale}/docs/guide/configuration`}
       >
         {text.configuration}
       </a>
-    </div>
-
-    <div class="mt-8 flex flex-wrap gap-2">
-      {#each Object.values(locales) as locale}
-        <a
-          class="rounded-md border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 transition hover:bg-zinc-50"
-          href={`/${locale.code}/docs/guide/getting-started`}
-        >
-          {locale.label}
-        </a>
-      {/each}
     </div>
   </main>
 </div>

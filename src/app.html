@@ -4,9 +4,32 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <!-- 预加载拉丁字母核心字体，防止 H1 标题跳动 -->
+    <link
+      rel="preload"
+      href="/fonts/inter-roman-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin="anonymous"
+    />
+    <!-- 预加载中日文核心字体 -->
+    <link
+      rel="preload"
+      href="/fonts/NotoSansSC-Regular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="preload"
+      href="/fonts/NotoSansJP-Regular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin="anonymous"
+    />
     %sveltekit.head%
   </head>
-  <body data-sveltekit-preload-data="hover">
+  <body data-sveltekit-preload-data="off">
     <div style="display: contents">%sveltekit.body%</div>
   </body>
 </html>
