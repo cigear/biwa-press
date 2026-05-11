@@ -1,14 +1,7 @@
-/*@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');*/
-
 @import "./fonts.css";
-
-@import "tailwindcss";
-
-@theme {
-  --font-base: -apple-system, BlinkMacSystemFont, "Segoe UI",
-    Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans",
-    "Helvetica Neue", sans-serif;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* 创建一个度量修正的备用字体，防止 Inter 加载前的跳动 */
 @font-face {
@@ -20,157 +13,71 @@
   size-adjust: 107%;
 }
 
-html {
-  /* 使用修正后的备用字体紧跟在 Inter 之后 */
-  font-family: Inter, "Inter Fallback", var(--font-base);
-  
-  /* 关键：统一行高，防止中英日字体切换导致的高度坍塌或撑开 */
-  line-height: 1.6; 
-  
-  /* 合并原有属性 */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow-y: scroll;
-  text-rendering: optimizeLegibility;
-  
-  /* 现代 CSS 属性：尝试对齐不同字体的 x-height，减少切换跳动 */
-  font-size-adjust: from-font;
-}
-
-/* 切换为 Noto Sans 系列字体 */
-html:lang(zh) {
-  font-family: Inter, "Noto Sans SC", "Inter Fallback", sans-serif;
-}
-
-html:lang(ja) {
-  font-family: Inter, "Noto Sans JP", "Inter Fallback", sans-serif;
-}
-
-@layer components {
-  .doc-content {
-    color: #27272a;
-    font-size: 1rem;
-    line-height: 1.75;
+@layer base {
+  :root {
+    /* 强制在全局作用域定义基础变量，防止 Edge 无法从 @theme 中读取 */
+    --spacing: 0.25rem;
+    --tw-leading: 1.5;
+    --text-sm--line-height: 1.25rem;
+    --font-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
 
-  .doc-content h1 {
-    margin: 0 0 1.5rem;
-    color: #09090b;
-    font-size: 2.5rem;
-    /* 锁定行高：大标题必须有足够的行高容纳中文字体的高度 */
-    line-height: 1.4; 
-    font-weight: 750;
-    letter-spacing: -0.02em;
-    /* 防止长标题换行瞬间的跳动 */
-    overflow-wrap: break-word;
+  html {
+    /* 使用更稳健的字体声明，并使用变量 */
+    font-family: var(--font-base);
+
+    line-height: 1.6;
+
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+
+    /* 核心修复：强制预留滚动条位置。防止搜索框打开时 Bits UI 注入的 padding 导致页面向左跳动 */
+    /* 这是解决现代 Web 布局跳动的标准工业方案 */
+    scrollbar-gutter: stable;
+
+    /* 改回 clip：clip 不会创建滚动容器，能更彻底地解决“明明内容没出界却有滚动条”的问题 */
+    overflow-x: clip;
+    overflow-y: auto;
   }
 
-  .doc-content h2 {
-    margin: 2.5rem 0 1rem;
-    border-top: 1px solid #e4e4e7;
-    padding-top: 1.5rem;
-    color: #09090b;
-    font-size: 1.5rem;
-    /* 关键改进：1.3 在中文字体下可能仍会跳动，建议增加到 1.4 */
-    line-height: 1.4;
-    font-weight: 700;
+  body {
+    /* 移除固定高度，由内容决定高度，防止短页面出现 1px 溢出 */
+    margin: 0;
   }
 
-  .doc-content p {
-    margin: 1rem 0;
+  /* 优化滚动条视觉体验：既保留占位防止跳动，又不显示难看的灰色轨道 */
+  html::-webkit-scrollbar-track {
+    background-color: transparent;
+    /* Chrome/Edge/Safari: 轨道背景透明 */
   }
 
-  .doc-content a {
-    color: inherit;
-    text-decoration: none;
+  * {
+    scrollbar-width: thin;
+    /* Firefox: 窄滚动条 */
+    scrollbar-color: #d4d4d8 transparent;
+    /* Firefox: 滑块颜色, 轨道颜色透明 */
   }
 
-  .doc-content ul {
-    margin: 1rem 0;
-    padding-left: 1.4rem;
-    list-style: disc;
+  /* 
+    针对 Bits UI / Melt UI 的优化：
+    现在我们移除全局 gutter，允许库在锁定滚动时注入 padding-right 来防止跳动。
+  */
+
+  /* 切换为 Noto Sans 系列字体 */
+  html:lang(zh) {
+    font-family: Inter, "Noto Sans SC", "Inter Fallback", sans-serif;
   }
 
-  .doc-content pre {
-    margin: 1.25rem 0;
-    overflow: auto; 
-    border-radius: 0.5rem;
-    padding: 1rem;
-    /* 让 Shiki 控制背景和文字颜色，或者保留默认暗色 */
-    background-color: #0d1117; 
-    position: relative;
-    border: 1px solid #27272a;
+  html:lang(ja) {
+    font-family: Inter, "Noto Sans JP", "Inter Fallback", sans-serif;
   }
 
-  /* 特定行高亮样式 */
-  .shiki .line.highlighted {
-    background-color: color-mix(in srgb, var(--color-zinc-700), transparent 50%);
-    width: calc(100% + 2rem);
-    display: inline-block;
-    margin: 0 -1rem;
-    padding: 0 1rem;
+  /* 建议为按钮类链接显式增加 display，确保 padding 正常渲染 */
+  a.rounded-md {
+    display: inline-block !important;
+    padding: 0.5rem 1rem !important;
+    /* 对应 py-2 px-4，使用固定值彻底避开 Edge 变量解析问题 */
   }
 
-  /* 行号样式 */
-  .shiki.has-line-numbers .line::before {
-    content: attr(line);
-    display: inline-block;
-    width: 1.5rem;
-    margin-right: 1rem;
-    text-align: right;
-    color: var(--color-zinc-500);
-    opacity: 0.6;
-  }
-
-  .doc-content pre code {
-    display: block;
-    overflow-x: auto;
-    padding-bottom: 0.5rem;
-  }
-
-  /* 复制按钮样式 */
-  .copy-btn {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    z-index: 10;
-    padding: 0.4rem;
-    border-radius: 0.375rem;
-    background: rgba(39, 39, 42, 0.8);
-    color: #a1a1aa;
-    border: 1px solid rgba(63, 63, 70, 0.5);
-    cursor: pointer;
-    opacity: 0;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .doc-content pre:hover .copy-btn {
-    opacity: 1;
-  }
-
-  .copy-btn:hover {
-    background: #3f3f46;
-    color: #ffffff;
-    border-color: #52525b;
-  }
-
-  .doc-content code {
-    border-radius: 0.25rem;
-    background: #f4f4f5;
-    padding: 0.15rem 0.3rem;
-    color: #18181b;
-    /* 标题内的 code 块如果行高太小，会把标题行拉窄，统一用 normal */
-    font-size: 0.85em; 
-    line-height: normal;
-    vertical-align: middle;
-  }
-
-  .doc-content pre code {
-    background: transparent;
-    padding: 0;
-    color: inherit;
-  }
 }

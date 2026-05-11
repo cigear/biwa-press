@@ -1,29 +1,34 @@
 <script lang="ts">
   import { page } from '$app/state';
   import type { Locale } from '$lib/config/locales';
-  import { getSidebar, type Group } from '$lib/docs';
+  import type { Group } from '$lib/docs';
   import Header from './Header.svelte';
   import Sidebar from './Sidebar.svelte';
   import DocToc from './DocToc.svelte';
   import { ChevronRight, ChevronLeft } from '@lucide/svelte';
+  import { t, locale as i18nLocale } from 'svelte-i18n';
 
   let { 
     locale, 
     metadata, 
     children, 
-    toc = [] 
+    toc = [],
+    groups: initialGroups = []
   }: { 
     locale: Locale; 
     metadata: Record<string, any>; 
     children: import('svelte').Snippet; 
-    toc?: { depth: number; text: string; slug: string }[] 
+    toc?: { depth: number; text: string; slug: string }[];
+    groups?: Group[];
   } = $props();
 
-  // PC 端面包屑逻辑
-  let groups = $state<Group[]>([]);
+  // 关键：当 locale 属性改变时，同步更新 svelte-i18n 的全局状态
   $effect(() => {
-    getSidebar(locale).then(res => groups = res);
+    if (locale) i18nLocale.set(locale);
   });
+
+  let fetchedGroups = $state<Group[] | null>(null);
+  let groups = $derived(fetchedGroups ?? initialGroups);
 
   const breadcrumbs = $derived.by(() => {
     const currentPath = page.url.pathname;
@@ -122,78 +127,79 @@
   });
 </script>
 
-<svelte:head>
-  <title>{metadata?.title ?? 'Docs'}</title>
-  <meta name="description" content={metadata?.description ?? ''} />
-</svelte:head>
+<Header {locale} {groups} />
 
-<div class="min-h-screen bg-white text-zinc-950">
-  <Header {locale} />
+<div class="mx-auto grid max-w-7xl grid-cols-1 px-4 items-start lg:grid-cols-[260px_1fr_200px] lg:gap-10">
+  <Sidebar {locale} sidebar={groups} />
 
-  <div class="mx-auto grid max-w-7xl grid-cols-1 px-4 lg:grid-cols-[260px_1fr_200px] lg:gap-10">
-    <Sidebar {locale} />
-
-    <div class="min-w-0">
-      <!-- 面包屑导航：在所有屏幕显示 -->
-      {#if breadcrumbs.length > 0}
-        <nav class="sticky top-14 z-20 flex flex-wrap items-center gap-1.5 border-b border-zinc-100 bg-white py-2 text-sm text-zinc-500">
-          {#each breadcrumbs as crumb, i}
-            {#if i > 0}
-              <ChevronRight size={14} class="text-zinc-300" />
-            {/if}
-            {#if crumb.href && i < breadcrumbs.length - 1}
-              <a href={crumb.href} class="transition-colors hover:text-zinc-950">
-                {crumb.title}
-              </a>
-            {:else}
-              <span
-                class={i === breadcrumbs.length - 1
-                  ? "font-medium text-zinc-950"
-                  : ""}
-              >
-                {crumb.title}
-              </span>
-            {/if}
-          {/each}
-        </nav>
-      {/if}
-
-      <main class="doc-content pb-10 pt-4 lg:pb-12 lg:pt-6">
-        {@render children()}
-
-        <!-- 底部翻页导航 -->
-        <nav class="mt-16 flex items-start justify-between gap-4 border-t border-zinc-100 pt-8">
-          {#if pagination.prev}
-            <a
-              href={pagination.prev.href}
-              class="group flex flex-1 flex-col gap-1 min-w-0 transition-colors"
-            >
-              <span class="text-xs font-medium text-zinc-400">Previous</span>
-              <span class="flex items-center gap-1 text-base font-semibold text-zinc-600 transition-colors group-hover:text-zinc-950">
-                <ChevronLeft size={18} class="shrink-0 transition-transform group-hover:-translate-x-1" />
-                {pagination.prev.title}
-              </span>
-            </a>
+  <div class="min-w-0">
+    <!-- 面包屑导航：在所有屏幕显示 -->
+    {#if breadcrumbs.length > 0}
+      <nav class="sticky top-14 z-20 flex flex-wrap items-center gap-1.5 border-b border-zinc-100 bg-white py-2 text-sm text-zinc-500">
+        {#each breadcrumbs as crumb, i}
+          {#if i > 0}
+            <ChevronRight size={14} class="text-zinc-300" />
           {/if}
-
-          {#if pagination.next}
-            <a
-              href={pagination.next.href}
-              class="group flex flex-1 flex-col items-end gap-1 min-w-0 transition-colors ms-auto"
-            >
-              <span class="text-xs font-medium text-zinc-400">Next</span>
-              <span class="flex items-center gap-1 text-base font-semibold text-zinc-600 transition-colors group-hover:text-zinc-950">
-                {pagination.next.title}
-                <ChevronRight size={18} class="shrink-0 transition-transform group-hover:translate-x-1" />
-              </span>
+          {#if crumb.href && i < breadcrumbs.length - 1}
+            <a href={crumb.href} class="transition-colors hover:text-zinc-950">
+              {crumb.title}
             </a>
+          {:else}
+            <span
+              class={i === breadcrumbs.length - 1
+                ? "font-medium text-zinc-950"
+                : ""}
+            >
+              {crumb.title}
+            </span>
           {/if}
-        </nav>
-      </main>
-    </div>
+        {/each}
+      </nav>
+    {/if}
 
-    <aside class="py-12 lg:block">
-      <DocToc items={toc} minDepth={2} maxDepth={3} />
-    </aside>
+    <main class="doc-content pb-10 pt-4 lg:pb-12 lg:pt-6">
+      {@render children()}
+
+      <!-- 底部翻页导航 -->
+      <nav class="mt-16 flex items-start justify-between gap-4 border-t border-zinc-100 pt-8">
+        {#if pagination.prev}
+          <a
+            href={pagination.prev.href}
+            class="group flex flex-1 flex-col gap-1 min-w-0 transition-colors"
+          >
+            <span class="text-xs font-medium text-zinc-400">{$t('previous', { default: 'Previous' })}</span>
+            <span class="flex items-center gap-1 text-base font-semibold text-zinc-600 transition-colors group-hover:text-zinc-950">
+              <ChevronLeft size={18} class="shrink-0 transition-transform group-hover:-translate-x-1" />
+              {pagination.prev.title}
+            </span>
+          </a>
+        {/if}
+
+        {#if pagination.next}
+          <a
+            href={pagination.next.href}
+            class="group flex flex-1 flex-col items-end gap-1 min-w-0 transition-colors ms-auto"
+          >
+            <span class="text-xs font-medium text-zinc-400">{$t('next', { default: 'Next' })}</span>
+            <span class="flex items-center gap-1 text-base font-semibold text-zinc-600 transition-colors group-hover:text-zinc-950">
+              {pagination.next.title}
+              <ChevronRight size={18} class="shrink-0 transition-transform group-hover:translate-x-1" />
+            </span>
+          </a>
+        {/if}
+      </nav>
+    </main>
+
+    <!-- 页面底部信息 -->
+    <footer class="mt-16 border-t border-zinc-100 py-8 text-sm text-zinc-500">
+      <div class="flex flex-col items-center justify-between gap-2 sm:flex-row">
+        <span class="text-zinc-400">Version 0.1.0</span>
+        <span>Powered by <a href="https://github.com/biwa-press" class="font-medium text-zinc-950 hover:underline">Biwa Press</a></span>
+      </div>
+    </footer>
   </div>
+
+  <aside class="lg:block">
+    <DocToc items={toc} minDepth={2} maxDepth={3} />
+  </aside>
 </div>

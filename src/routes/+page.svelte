@@ -3,6 +3,7 @@
   import { defaultLocale, getLocaleConfig, locales, type Locale } from '$lib/config/locales';
   import { site } from '$lib/config/site';
   
+  let { data } = $props();
 
   // 使用 $state 包装，使其在检测到浏览器语言后可以更新
   let currentViewLocale = $state<Locale>(defaultLocale);
@@ -28,8 +29,7 @@
 </svelte:head>
 
 <div class="min-h-screen bg-white text-zinc-950">
-  <!-- 3. 将响应式语言传递给 Header -->
-  <Header locale={currentViewLocale} />
+  <Header locale={currentViewLocale} groups={data.sidebar} />
 
   <main class="mx-auto max-w-5xl px-6 py-24">
     <p class="text-sm font-medium text-brand">{text.eyebrow}</p>
@@ -54,4 +54,11 @@
       </a>
     </div>
   </main>
+
+  <footer class="mx-auto max-w-5xl px-6 py-12 border-t border-zinc-100 text-sm text-zinc-500">
+    <div class="flex flex-col items-center justify-between gap-2 sm:flex-row">
+      <span class="text-zinc-400">Version 0.1.0</span>
+      <span>Powered by <a href="https://github.com/biwa-press" class="font-medium text-zinc-950 hover:underline">Biwa Press</a></span>
+    </div>
+  </footer>
 </div>

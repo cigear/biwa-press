@@ -1,6 +1,5 @@
 ---
-title: Getting Started : Step 1
-description: Getting Started : Step 1
+title: "步骤 1"
+description: "配置指南：步骤 1"
 order: 1
 ---
-

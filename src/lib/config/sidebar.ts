@@ -1,5 +1,5 @@
 import type { Locale } from '$lib/config/locales';
-import { scanDocs } from '$lib/docs';
+import { scanDocs } from '$lib/docs.server';
 
 export async function getSidebar(locale: Locale) {
   const groups = await scanDocs(locale);

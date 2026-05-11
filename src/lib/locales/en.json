@@ -18,5 +18,7 @@
   "guide": "Guide",
   "gettingStarted": "Getting Started",
   "reference": "Reference",
-  "cli": "CLI"
+  "cli": "CLI",
+  "previous": "Previous",
+  "next": "Next"
 }
