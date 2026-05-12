@@ -107,10 +107,34 @@
       // 使用 Lucide 风格的 SVG 图标
       btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
 
-      btn.onclick = async () => {
-        const code = pre.querySelector('code')?.innerText || '';
+      btn.onclick = async (e) => {
+        e.preventDefault();
+        // 提取代码：优先寻找 code 标签，否则取 pre 内容
+        const codeElement = pre.querySelector('code');
+        const code = codeElement ? codeElement.textContent : pre.textContent;
+        
+        if (!code) return;
+
         try {
-          await navigator.clipboard.writeText(code);
+          // 优先使用现代 API
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(code);
+          } else {
+            // Fallback: Using document.execCommand for non-secure contexts
+            // Although deprecated, it remains the only programmatic way to copy in HTTP environments.
+            const textArea = document.createElement("textarea");
+            textArea.value = code;
+            // Ensure the textarea is not visible and doesn't cause layout shifts
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            textArea.style.top = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textArea);
+          }
+
           btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
           btn.classList.add('text-green-500');
           setTimeout(() => {
@@ -129,10 +153,10 @@
 
 <Header {locale} {groups} />
 
-<div class="mx-auto grid max-w-7xl grid-cols-1 px-4 items-start lg:grid-cols-[260px_1fr_200px] lg:gap-10">
+<div class="mx-auto grid min-h-[calc(100vh-3.5rem)] max-w-7xl grid-cols-1 px-4 lg:grid-cols-[260px_1fr_200px] lg:gap-10">
   <Sidebar {locale} sidebar={groups} />
 
-  <div class="min-w-0">
+  <div class="flex flex-col min-w-0">
     <!-- 面包屑导航：在所有屏幕显示 -->
     {#if breadcrumbs.length > 0}
       <nav class="sticky top-14 z-20 flex flex-wrap items-center gap-1.5 border-b border-zinc-100 bg-white py-2 text-sm text-zinc-500">
@@ -157,7 +181,7 @@
       </nav>
     {/if}
 
-    <main class="doc-content pb-10 pt-4 lg:pb-12 lg:pt-6">
+    <main class="doc-content flex-1 pb-10 pt-4 lg:pb-12 lg:pt-6">
       {@render children()}
 
       <!-- 底部翻页导航 -->

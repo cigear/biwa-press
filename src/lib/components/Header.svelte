@@ -21,6 +21,24 @@
 
   let open = $state(false);
   let isLangOpen = $state(false);
+
+  /**
+   * 根据当前 URL 和目标语言生成新的本地化 URL
+   * @param targetLocale 目标语言 (e.g., 'en', 'ja', 'zh')
+   * @returns 包含新语言的完整 URL 路径
+   */
+  function getLocalizedHref(targetLocale: Locale): string {
+    const pathParts = currentPath.split('/');
+    // pathParts[0] is an empty string
+    // pathParts[1] should be the current locale (e.g., 'en', 'ja', 'zh')
+
+    if (pathParts.length > 1 && locales[pathParts[1] as Locale]) {
+      pathParts[1] = targetLocale;
+      return pathParts.join('/');
+    }
+    // Fallback for paths like '/' or if locale is not in the first segment
+    return `/${targetLocale}/`;
+  }
 </script>
 
 <header
@@ -74,9 +92,7 @@
         </button>
 
         {#if isLangOpen}
-          <!-- 点击外部关闭菜单的遮罩层：放在内容前，确保 z-index 低于内容 -->
-          <button
-            class="fixed inset-0 z-10 cursor-default bg-transparent"
+          <button class="fixed inset-0 z-10 cursor-default bg-transparent"
             onclick={() => (isLangOpen = false)}
             aria-label="Close language menu"
           ></button>
@@ -84,11 +100,8 @@
           <div
             transition:fly={{ y: 8, duration: 150 }}
             class="absolute right-0 z-20 mt-2 w-40 overflow-hidden rounded-lg border border-zinc-100 bg-white py-1 shadow-xl"
-          >
-            {#each Object.values(locales) as item}
-              {@const targetHref = currentPath.includes(`/${locale}/`) 
-                ? currentPath.replace(`/${locale}/`, `/${item.code}/`) 
-                : `/${item.code}/docs/guide/getting-started`}
+          > {#each Object.values(locales) as item}
+              {@const targetHref = getLocalizedHref(item.code)}
               <a
                 href={targetHref}
                 data-sveltekit-preload-data="off"

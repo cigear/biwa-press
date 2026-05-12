@@ -25,3 +25,22 @@ console.log(hello);
 const hello = "Hello, World!";
 console.log(hello);
 ```
+
+## javascript3
+```javascript showLineNumbers
+const hello = "Hello, World!";
+console.log(hello);
+```
+
+## javascript4
+```javascript showLineNumbers
+const hello = "Hello, World!";
+console.log(hello);
+```
+
+## javascript5
+```javascript showLineNumbers
+const hello = "Hello, World!";
+console.log(hello);
+```
+

@@ -2,25 +2,16 @@
   import Header from '$lib/components/Header.svelte';
   import { defaultLocale, getLocaleConfig, locales, type Locale } from '$lib/config/locales';
   import { site } from '$lib/config/site';
+  import type { PageData } from './$types';
   
-  let { data } = $props();
+  let { data } = $props<{ data: PageData }>();
 
-  // 使用 $state 包装，使其在检测到浏览器语言后可以更新
-  let currentViewLocale = $state<Locale>(defaultLocale);
+  // 移除 $state 切换逻辑，直接从路由数据中派生当前语言
+  // 这样当访问 /en 时，currentViewLocale 始终为 'en'
+  const currentViewLocale = $derived(data.locale as Locale);
   
   // 使用 $derived 确保页面文字配置随 currentViewLocale 自动更新
   const text = $derived(getLocaleConfig(currentViewLocale));
-
-  // Svelte 5: $effect 会在组件挂载到客户端后执行
-  $effect(() => {
-    // navigator.language 通常返回 "zh-CN" 或 "en-US"
-    const browserLang = navigator.language.split('-')[0] as Locale;
-    
-    // 如果浏览器首选语言在我们的支持列表中，则自动切换状态
-    if (locales[browserLang]) {
-      currentViewLocale = browserLang;
-    }
-  });
 </script>
 
 <svelte:head>
@@ -28,10 +19,10 @@
   <meta name="description" content={site.description} />
 </svelte:head>
 
-<div class="min-h-screen bg-white text-zinc-950">
+<div class="flex min-h-screen flex-col bg-white text-zinc-950">
   <Header locale={currentViewLocale} groups={data.sidebar} />
 
-  <main class="mx-auto max-w-5xl px-6 py-24">
+  <main class="mx-auto w-full max-w-5xl flex-1 px-6 py-24">
     <p class="text-sm font-medium text-brand">{text.eyebrow}</p>
     <h1 class="mt-4 max-w-3xl text-5xl font-semibold leading-tight tracking-normal">
       {text.headline}

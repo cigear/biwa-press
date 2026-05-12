@@ -8,14 +8,12 @@
   // Svelte 5: 使用 $effect 监听 locale 变化并同步更新 HTML 的 lang 属性
   // 这能确保 app.css 中的 html:lang(zh) 和 html:lang(ja) 选择器生效
   $effect(() => {
-    if ($locale) {
-      document.documentElement.lang = $locale;
-    }
+    document.documentElement.lang = $locale || 'en';
   });
 </script>
 
-{#await waitLocale($locale ?? undefined)}
-  <!-- 可以在这里放置一个加载占位符，防止语言切换时的闪烁 -->
+{#await waitLocale()}
+  <div class="fixed inset-0 bg-white"></div>
 {:then}
   {@render children()}
 {/await}

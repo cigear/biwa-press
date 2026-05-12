@@ -1,4 +1,4 @@
-import type { EntryGenerator } from './[locale]/$types';
+import type { EntryGenerator } from './$types';
 
 // 建议：通过 import.meta.glob 扫描 docs 文件夹下的目录来动态获取语言
 export const entries: EntryGenerator = () => {
