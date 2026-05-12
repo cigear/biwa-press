@@ -134,3 +134,12 @@
 .doc-content :is(h2, h3, h4)[id] {
   scroll-margin-top: 128px !important;
 }
+
+/* Mermaid 图表容器样式 */
+.doc-content pre.mermaid {
+  background-color: transparent !important;
+  border: none !important;
+  display: flex;
+  justify-content: center;
+  overflow: visible;
+}

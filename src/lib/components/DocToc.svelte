@@ -19,6 +19,8 @@
   const maxDepth = $derived(props.maxDepth ?? 3);
 
   let activeSlug = $state<string | null>(null);
+  let isClicking = false;
+  let scrollTimeout: ReturnType<typeof setTimeout>;
 
   const items = $derived(props.items ?? []);
   const filtered = $derived(
@@ -28,15 +30,21 @@
   function handleClick(slug: string) {
     const el = document.getElementById(slug);
     if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    isClicking = true;
     activeSlug = slug;
+
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(() => { isClicking = false; }, 1000);
   }
 
   // 当过滤后的列表改变时（通常是由于页面切换），重新初始化观察器
   $effect(() => {
     if (typeof window === 'undefined') return;
 
-    const elements: HTMLElement[] = filtered
+    const elements = filtered
       .map((h: TocItem) => document.getElementById(h.slug))
       .filter((el: HTMLElement | null): el is HTMLElement => !!el)
       // 确保按页面物理顺序排序，这是“一步步点亮”的基础
@@ -47,57 +55,63 @@
     let lastScrollTop = window.scrollY;
     let touchStartY = 0;
     let lastStepTime = 0;
-    const STEP_COOLDOWN = 150; // 步进冷却时间，防止滚动过快瞬间跳过多个项目
+    const STEP_COOLDOWN = 80; // 降低冷却时间，保持灵敏但有序
     let ticking = false;
     let observer: IntersectionObserver; // 在这里声明 observer
 
-    // 手动步进函数：用于处理边界情况（触底/顶）
-    const manualStep = (direction: 1 | -1) => {
-      const now = Date.now();
-      if (now - lastStepTime < STEP_COOLDOWN) return;
+    const updateActive = (dirOverride?: 1 | -1) => {
+      if (isClicking) return;
 
-      const currentIdx = elements.findIndex(el => el.id === activeSlug);
-      const newIdx = Math.max(0, Math.min(elements.length - 1, currentIdx + direction));
-
-      if (newIdx !== currentIdx) {
-        activeSlug = elements[newIdx].id;
-        lastStepTime = now;
-      }
-    };
-
-    const updateActive = () => {
       const scrollTop = window.scrollY;
       const scrollHeight = document.documentElement.scrollHeight;
       const clientHeight = window.innerHeight;
-      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10;
+      const atBottom = scrollTop + clientHeight >= scrollHeight - 5;
+      const atTop = scrollTop < 10;
 
-      const triggerLine = 135; // 基础触发线 (Header + Breadcrumb)
+      // 确定滚动方向
+      let direction: 0 | 1 | -1 = dirOverride || 0;
+      if (direction === 0) {
+        if (scrollTop > lastScrollTop) direction = 1;
+        else if (scrollTop < lastScrollTop) direction = -1;
+      }
+      lastScrollTop = scrollTop;
 
-      // 1. 极顶保护
-      if (scrollTop < 10) {
-        activeSlug = elements[0].id;
+      // 如果没有位移且没有强制指令，则不处理
+      if (direction === 0) return;
+
+      const currentIdx = elements.findIndex((el: HTMLElement) => el.id === activeSlug);
+      
+      // 初始状态扫描
+      if (currentIdx === -1) {
+        let best = 0;
+        for (let i = 0; i < elements.length; i++) {
+          if (elements[i].getBoundingClientRect().top <= 135) best = i;
+          else break;
+        }
+        activeSlug = elements[best].id;
         return;
       }
 
-      // 2. 物理扫描：寻找最后一个“越过”触发线的标题
-      let bestIdx = 0;
-      for (let i = 0; i < elements.length; i++) {
-        if (elements[i].getBoundingClientRect().top <= triggerLine) {
-          bestIdx = i;
-        } else {
-          break;
+      const now = Date.now();
+      if (now - lastStepTime < STEP_COOLDOWN) return;
+
+      const triggerLine = 135;
+
+      if (direction === 1 && currentIdx < elements.length - 1) {
+        const nextRect = elements[currentIdx + 1].getBoundingClientRect();
+        // 向下步进条件：标题跨越触发线、或已在视口内可见且正在向下滚动、或已触底强制步进
+        if (nextRect.top <= triggerLine || nextRect.top < clientHeight - 20 || dirOverride === 1) {
+          activeSlug = elements[currentIdx + 1].id;
+          lastStepTime = now;
+        }
+      } else if (direction === -1 && currentIdx > 0) {
+        const currRect = elements[currentIdx].getBoundingClientRect();
+        // 向上步进条件：当前标题滑出触发区、或已回到顶部、或强制步进
+        if (currRect.top > triggerLine || atTop || dirOverride === -1) {
+          activeSlug = elements[currentIdx - 1].id;
+          lastStepTime = now;
         }
       }
-
-      // 3. 状态更新逻辑
-      const currentIdx = elements.findIndex(el => el.id === activeSlug);
-      
-      // 如果不是在底部，或者发现了更靠后的物理标题，则更新
-      if (!isAtBottom || bestIdx > currentIdx) {
-        activeSlug = elements[bestIdx].id;
-      }
-      
-      lastScrollTop = scrollTop;
     };
 
     const scrollHandler = () => {
@@ -114,8 +128,8 @@
     const wheelHandler = (e: WheelEvent) => {
       const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 10;
       const atTop = window.scrollY < 10;
-      if (atBottom && e.deltaY > 0) manualStep(1); // 触底向下
-      if (atTop && e.deltaY < 0) manualStep(-1);  // 触顶向上
+      if (atBottom && e.deltaY > 0) updateActive(1); // 触底向下
+      if (atTop && e.deltaY < 0) updateActive(-1);  // 触顶向上
     };
 
     // 捕获触摸事件：处理移动端手势
@@ -123,10 +137,10 @@
     const touchMove = (e: TouchEvent) => {
       const currentY = e.touches[0].clientY;
       const deltaY = touchStartY - currentY; // 正值代表手指向上划，页面向下走
-      const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 10;
+      const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 5;
       
       if (atBottom && deltaY > 15) {
-        manualStep(1);
+        updateActive(1);
         touchStartY = currentY; // 连续滑动支持
       }
     };
@@ -135,9 +149,9 @@
     window.addEventListener('wheel', wheelHandler, { passive: true });
     window.addEventListener('touchstart', touchStart, { passive: true });
     window.addEventListener('touchmove', touchMove, { passive: true });
-    window.addEventListener('hashchange', updateActive);
+    window.addEventListener('hashchange', () => updateActive());
 
-    observer = new IntersectionObserver(updateActive, {
+    observer = new IntersectionObserver(() => updateActive(), {
       rootMargin: '-135px 0px -70% 0px',
       threshold: [0, 1]
     });
@@ -151,7 +165,7 @@
       window.removeEventListener('wheel', wheelHandler);
       window.removeEventListener('touchstart', touchStart);
       window.removeEventListener('touchmove', touchMove);
-      window.removeEventListener('hashchange', updateActive);
+      window.removeEventListener('hashchange', () => updateActive());
     };
   });
 </script>

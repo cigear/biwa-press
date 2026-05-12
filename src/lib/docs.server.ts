@@ -93,6 +93,11 @@ export async function loadDoc(locale: Locale, slug: string) {
     const text = isToken ? args[0].text : args[0];
     const lang = isToken ? args[0].lang : args[1];
 
+    if (lang === 'mermaid') {
+      // 如果是 Mermaid 代码块，直接返回原始 HTML，由客户端 Mermaid.js 处理
+      return `<pre class="language-mermaid"><code class="language-mermaid">${text || ''}</code></pre>`;
+    }
+
     const [language, ...rest] = (lang || '').split(/\s+/);
     return highlighter.codeToHtml(text || '', {
       lang: language || 'text',

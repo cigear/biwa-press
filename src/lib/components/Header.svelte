@@ -66,7 +66,7 @@
         </svg>
       </button>
       <a
-        href={`/${locale}/docs/guide/getting-started`}
+        href={`/${locale}/`}
         class="text-sm font-semibold text-zinc-950"
       >
         {site.title}
@@ -75,7 +75,7 @@
 
     <div class="flex items-center gap-3 sm:gap-4">
       <!-- 语言切换 -->
-      <div class="relative z-[56]"> <!-- 添加 z-index，确保其堆叠上下文高于遮罩层 -->
+      <div class="relative z-56"> <!-- 添加 z-index，确保其堆叠上下文高于遮罩层 -->
         <button
           onclick={() => (isLangOpen = !isLangOpen)}
           class="relative z-61 flex cursor-pointer items-center gap-1 rounded-full border border-zinc-200 bg-white px-3 py-1 text-sm text-zinc-500 transition-colors hover:text-zinc-950 active:scale-95 sm:px-4 sm:py-1.5"

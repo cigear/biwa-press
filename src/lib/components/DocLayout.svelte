@@ -7,6 +7,7 @@
   import DocToc from './DocToc.svelte';
   import { ChevronRight, ChevronLeft } from '@lucide/svelte';
   import { t, locale as i18nLocale } from 'svelte-i18n';
+  import mermaid from 'mermaid';
 
   let { 
     locale, 
@@ -148,6 +149,40 @@
 
       pre.appendChild(btn);
     });
+  });
+
+  // 渲染 Mermaid 图表
+  $effect(() => {
+    // 依赖页面路径变化
+    const path = page.url.pathname;
+    
+    // 查找所有的 mermaid 代码块
+    // mdsvex 通常生成的结构是 pre.language-mermaid > code.language-mermaid
+    const mermaidBlocks = document.querySelectorAll('pre code.language-mermaid');
+
+    if (mermaidBlocks.length > 0) {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'default',
+        fontFamily: 'var(--font-base)',
+        securityLevel: 'loose'
+      });
+
+      mermaidBlocks.forEach((block) => {
+        const pre = block.parentElement;
+        if (pre) {
+          pre.classList.add('mermaid');
+          // 将原始代码内容提取到 pre 标签中，这是 mermaid.run 期待的结构
+          pre.textContent = block.textContent;
+          // 移除复原按钮（如果有）
+          pre.querySelector('.copy-btn')?.remove();
+        }
+      });
+
+      mermaid.run({
+        querySelector: '.mermaid'
+      });
+    }
   });
 </script>
 
