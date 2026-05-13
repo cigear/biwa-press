@@ -1,4 +1,4 @@
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { isLocale, type Locale } from '$lib/config/locales';
 import type { DocMetadata } from '$lib/docs/metadata';
 import type { SidebarItem, Group } from '$lib/docs';
@@ -17,7 +17,7 @@ function getDocsRoot() {
 }
 
 /** Shiki 高亮器单例，用于在运行时解析 Markdown 代码块 */
-let highlighter: any;
+let highlighterPromise: Promise<any> | null = null;
 
 /* ---------------------------------------------
  * loadDoc
@@ -41,7 +41,8 @@ export async function loadDoc(locale: Locale, slug: string) {
   }
 
   if (!filePath) {
-    throw error(404, `Document not found: ${locale}/${slug}`);
+    // 当请求的文档在目标语言中不存在时（例如切换语言后），自动重定向到该语言的首页
+    throw redirect(307, `/${locale}/`);
   }
 
   const fileContent = fs.readFileSync(filePath, 'utf-8');
@@ -53,18 +54,39 @@ export async function loadDoc(locale: Locale, slug: string) {
     const parsed = matter(fileContent);
     data = parsed.data;
     content = parsed.content;
+
+    if (filePath.endsWith('index.md')) {
+      // 根据要求：index.md 本身不显示内容。
+      // 如果访问的是目录 URL（匹配到 index.md），则自动查找目录下 order 最小的第一个有效子文件作为内容显示。
+      const dir = path.dirname(filePath);
+      const siblings = fs.readdirSync(dir)
+        .filter(f => f.endsWith('.md') && f.toLowerCase() !== 'index.md')
+        .map(f => {
+          const p = path.join(dir, f);
+          const m = matter(fs.readFileSync(p, 'utf-8'));
+          return { content: m.content, order: m.data.order ?? 999 };
+        })
+        .sort((a, b) => a.order - b.order);
+
+      if (siblings.length > 0) {
+        content = siblings[0].content;
+      } else {
+        content = '';
+      }
+    }
   } catch (e: any) {
     console.warn(`[Biwa Press] Malformed frontmatter in ${filePath}. Use quotes for values containing colons. Error: ${e.reason || e.message}`);
     // 发生错误时，data 保持为空，content 为原始文件内容
   }
   
   // 确保 Shiki 已初始化
-  if (!highlighter) {
-    highlighter = await createHighlighter({
+  if (!highlighterPromise) {
+    highlighterPromise = createHighlighter({
       themes: ['github-dark'],
       langs: ['javascript', 'typescript', 'bash', 'css', 'html', 'json', 'svelte', 'text', 'markdown']
     });
   }
+  const highlighter = await highlighterPromise;
 
   const slugger = new GithubSlugger();
   const toc: { depth: number; text: string; slug: string }[] = [];
@@ -173,16 +195,18 @@ export async function scanDocs(locale: Locale): Promise<Group[]> {
     let filePath = possiblePaths.find(p => fs.existsSync(p));
     if (!filePath) continue;
 
+    const isIndexFile = filePath.endsWith('index.md');
     const fileContent = fs.readFileSync(filePath, 'utf-8');
     
     let metadata: any = {};
     try {
       metadata = matter(fileContent).data;
     } catch (e: any) {
-      // 侧边栏扫描时静默跳过错误
-      // 使用 normalized 作为回退标题，并进行格式化
-      metadata = { title: normalized.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()) };
-      console.warn(`[Biwa Press] Malformed frontmatter in ${filePath}. Using derived title: "${metadata.title}". Error: ${e.reason || e.message}`);
+      // 侧边栏扫描时静默跳过错误。
+      // 仅使用最后一部分路径作为回退标题，避免出现 "Parent/Child" 这种重复层级的标题
+      const lastPart = parts[parts.length - 1] || normalized;
+      metadata = { title: lastPart.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()) };
+      console.warn(`[Biwa Press] Malformed frontmatter in ${filePath}. Using derived title: "${metadata.title}".`);
     }
 
     let currentLevel = root;
@@ -209,9 +233,15 @@ export async function scanDocs(locale: Locale): Promise<Group[]> {
 
       // 如果是当前文件对应的节点，更新其元数据
       if (isLast) {
-        node.slug = currentPath;
-        node.title = metadata.title ?? node.title;
-        node.order = metadata.order ?? 999;
+        if (!isIndexFile) {
+          // 使用原始 entry.slug 确保点击链接能准确指向物理文件
+          node.slug = entry.slug;
+        }
+        
+        // 只有当 Frontmatter 中明确提供了 title 或 order 时才覆盖
+        // 这确保了 index.md 和主文件可以互补元数据
+        if (metadata.title) node.title = metadata.title;
+        if (metadata.order !== undefined) node.order = metadata.order;
       } else {
         // 如果不是最后一层，继续向深层走
         if (!node.items) node.items = [];
@@ -224,12 +254,19 @@ export async function scanDocs(locale: Locale): Promise<Group[]> {
   const sortRecursive = (items: SidebarItem[]) => {
     // 优先按 order 排序，order 相同按标题字母排序
     items.sort((a, b) => (a.order - b.order) || a.title.localeCompare(b.title));
+    
     for (const item of items) {
-      if (item.items) {
-        if (item.items.length === 0) {
+      if (item.items && item.items.length > 0) {
+        // 【重要】Microsoft Learn 风格：
+        // 如果一个节点拥有子项目，那么它在侧边栏应该仅作为一个“分类标签”存在
+        // 强制移除 slug，确保点击它时只会触发 UI 的折叠/展开，而不会跳转
+        delete item.slug;
+        
+        sortRecursive(item.items);
+      } else {
+        // 清理空的 items 数组
+        if (item.items) {
           delete item.items; // 清理空的 items
-        } else {
-          sortRecursive(item.items);
         }
       }
     }
@@ -239,15 +276,26 @@ export async function scanDocs(locale: Locale): Promise<Group[]> {
   return root;
 }
 
+/** 内存缓存，避免生产环境下频繁扫描磁盘 */
+let sidebarCache: Record<string, Group[]> = {};
+
+/** 手动清空缓存，强制下次请求重新扫描 */
+export function clearSidebarCache() {
+  sidebarCache = {};
+}
+
 /* ---------------------------------------------
  * getSidebar(locale) → 同步返回 Group[]
  * （★ Header / Sidebar 可以直接 each）
  * --------------------------------------------- */
 export async function getSidebar(locale: Locale): Promise<Group[]> {
-  // 在开发环境或 SSR 模式下，不使用缓存以支持上传即生效
-  // 如果文档非常多（上千篇），可以考虑增加一个简单的 TTL 缓存
-  if (dev) {
+  if (dev || process.env.BIWA_DISABLE_CACHE === 'true') {
+    // 开发环境或显式禁用缓存时，支持实时预览磁盘文件变化
     return await scanDocs(locale);
   }
-  return await scanDocs(locale);
+  
+  if (!sidebarCache[locale]) {
+    sidebarCache[locale] = await scanDocs(locale);
+  }
+  return sidebarCache[locale];
 }

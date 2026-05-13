@@ -1,14 +1,47 @@
 <script lang="ts">
   import { Dialog } from 'bits-ui';
   import { getLocaleConfig, type Locale } from '$lib/config/locales';
-  import { searchDocs } from '$lib/search';
+  import type { SearchEntry } from '$lib/types';
   import { Search } from '@lucide/svelte';
 
   let open = $state(false);
   let query = $state('');
+  let results = $state<SearchEntry[]>([]);
+  let isLoading = $state(false);
+
   let { locale, onSelect }: { locale: Locale; onSelect?: () => void } = $props();
   const text = $derived(getLocaleConfig(locale));
-  const results = $derived(searchDocs(locale, query));
+
+  // 使用 $effect 处理异步搜索和防抖
+  $effect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      results = [];
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      isLoading = true;
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&lang=${locale}`, {
+          signal: controller.signal
+        });
+        if (res.ok) {
+          results = await res.json();
+        }
+      } catch (e: any) {
+        if (e.name !== 'AbortError') console.error('Search error:', e);
+      } finally {
+        isLoading = false;
+      }
+    }, 300); // 300ms 防抖，避免频繁请求
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  });
 </script>
 
 <Dialog.Root bind:open>
@@ -33,7 +66,7 @@
 
       {#if query.trim().length === 0}
         <p class="mt-3 text-sm text-zinc-500">{text.searchHint}</p>
-      {:else if results.length === 0}
+      {:else if results.length === 0 && !isLoading}
         <p class="mt-3 rounded-md border border-zinc-200 px-3 py-3 text-sm text-zinc-500">
           {text.searchNoResults}
         </p>

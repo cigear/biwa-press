@@ -45,3 +45,24 @@ npm run build:csr
 npm run preview:csr
 npm run package:csr
 ```
+
+### 刷新文档缓存
+
+Biwa Press 在生产模式下（SSR）会缓存侧边栏结构和搜索索引以确保极致的响应速度。如果你通过 SFTP 或其他方式在 VPS 上更新了 Markdown 文件，可以通过以下 `curl` 命令强制刷新缓存，而无需重启 Node.js 进程：
+
+```bash
+# 请将 <YOUR_TOKEN> 替换为环境变量 REVALIDATE_TOKEN 的值
+# 将 <YOUR_DOMAIN> 替换为你的实际域名或 IP (例如：your-domain.com 或 192.168.1.100:3000)
+curl -X POST \
+     -H "Authorization: Bearer <YOUR_TOKEN>" \
+     https://<YOUR_DOMAIN>/api/refresh-cache
+```
+
+#### 配置说明
+1. **安全性**：该接口受 `REVALIDATE_TOKEN` 保护。请确保在 VPS 的环境变量（如 `.env` 文件、pm2 配置文件或系统环境变量）中设置了一个强密码。
+2. **本地测试**：
+   ```bash
+   curl -X POST -H "Authorization: Bearer your-secret-token" http://localhost:5173/api/refresh-cache
+   ```
+3. **生效范围**：此操作将重新扫描文档目录以更新侧边栏（Sidebar）目录树，并重新构建搜索索引（Search Index）。
+```

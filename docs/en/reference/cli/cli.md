@@ -1,6 +1,7 @@
 ---
 title: CLI
 description: Planned command line interface for project scaffolding.
+order: 1
 ---
 
 # CLI

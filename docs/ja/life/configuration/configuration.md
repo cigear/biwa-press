@@ -1,7 +1,7 @@
 ---
-title: Configuration
+title: 概要
 description: Configure navigation, sidebar, and site metadata.
-order: 2
+order: 1
 ---
 
 # Configuration

@@ -1,19 +1,12 @@
 import { isLocale, type Locale } from '$lib/config/locales';
+import type { SearchEntry } from './types';
+import fs from 'node:fs';
+import path from 'node:path';
 
-export type SearchEntry = {
-  locale: Locale;
-  slug: string;
-  href: string;
-  title: string;
-  description: string;
-  content: string;
-};
+/** 内存缓存，避免频繁扫描磁盘 */
+let searchIndexCache: Record<string, SearchEntry[]> = {};
 
-const rawDocs = import.meta.glob<string>('../../docs/**/*.md', {
-  query: '?raw',
-  import: 'default',
-  eager: true
-});
+const getDocsRoot = () => path.resolve(process.cwd(), 'docs');
 
 function parseFrontmatter(markdown: string) {
   const match = markdown.match(/^---\s*([\s\S]*?)\s*---\s*([\s\S]*)$/);
@@ -51,33 +44,77 @@ function toPlainText(markdown: string) {
     .trim();
 }
 
-export const searchIndex = Object.entries(rawDocs)
-  .map(([path, markdown]) => {
-    const withoutPrefix = path.replace('../../docs/', '').replace(/\.md$/, '');
-    const [locale, ...slugParts] = withoutPrefix.split('/');
+/** 扫描磁盘生成指定语言的搜索索引 */
+export function buildSearchIndex(locale: Locale): SearchEntry[] {
+  const docsRoot = getDocsRoot();
+  const localeDir = path.join(docsRoot, locale);
+  const entries: SearchEntry[] = [];
 
-    if (!isLocale(locale)) {
-      return null;
+  if (!fs.existsSync(localeDir)) return [];
+
+  function walk(dir: string) {
+    const files = fs.readdirSync(dir);
+    for (const file of files) {
+      const fullPath = path.join(dir, file);
+      const stat = fs.statSync(fullPath);
+
+      if (stat.isDirectory()) {
+        walk(fullPath);
+      } else if (file.endsWith('.md')) {
+        // index.md 仅用于目录元数据，不作为独立的搜索结果页面
+        if (file.toLowerCase() === 'index.md') continue;
+
+        const relative = path.relative(docsRoot, fullPath).replace(/\\/g, '/').replace(/\.md$/, '');
+        const [lang, ...slugParts] = relative.split('/');
+        
+        if (lang !== locale) continue;
+
+        const markdown = fs.readFileSync(fullPath, 'utf-8');
+        const normalizedSlug = slugParts.join('/').replace(/\/index$/, '');
+        const slug = normalizedSlug === 'index' ? '' : normalizedSlug;
+        
+        const { metadata, body } = parseFrontmatter(markdown);
+        const title = metadata.title ?? slug.split('/').at(-1) ?? 'Untitled';
+        const description = metadata.description ?? '';
+
+        // 优化：不再存储完整的正文，而是提取前 200 个字符作为搜索上下文
+        // 或者只提取页面中的 H2, H3 标题
+        const searchContent = toPlainText(body).slice(0, 500); 
+
+        entries.push({
+          locale,
+          slug,
+          href: `/${locale}/docs/${slug}`,
+          title,
+          description,
+          content: searchContent
+        });
+      }
     }
+  }
 
-    const normalizedSlug = slugParts.join('/').replace(/\/index$/, '');
-    const slug = normalizedSlug === 'index' ? '' : normalizedSlug;
-    const { metadata, body } = parseFrontmatter(markdown);
-    const title = metadata.title ?? slug.split('/').at(-1) ?? 'Untitled';
-    const description = metadata.description ?? '';
+  walk(localeDir);
+  return entries;
+}
 
-    return {
-      locale,
-      slug,
-      href: `/${locale}/docs/${slug}`,
-      title,
-      description,
-      content: toPlainText(body)
-    };
-  })
-  .filter((entry): entry is SearchEntry => entry !== null);
+/** 清理搜索缓存 */
+export function clearSearchCache() {
+  searchIndexCache = {};
+}
+
+/** 获取完整索引 (用于 SSG 预渲染或客户端搜索) */
+export function getFullIndex(locale: Locale): SearchEntry[] {
+  if (!searchIndexCache[locale]) {
+    searchIndexCache[locale] = buildSearchIndex(locale);
+  }
+  return searchIndexCache[locale];
+}
 
 export function searchDocs(locale: Locale, query: string) {
+  if (!searchIndexCache[locale]) {
+    searchIndexCache[locale] = buildSearchIndex(locale);
+  }
+
   const tokens = query
     .trim()
     .toLocaleLowerCase()
@@ -88,8 +125,7 @@ export function searchDocs(locale: Locale, query: string) {
     return [];
   }
 
-  return searchIndex
-    .filter((entry) => entry.locale === locale)
+  return searchIndexCache[locale]
     .map((entry) => {
       const haystack = `${entry.title} ${entry.description} ${entry.content}`.toLocaleLowerCase();
       const score = tokens.reduce((total, token) => {

@@ -1,6 +1,7 @@
 ---
-title: CLI
+title: 概要
 description: プロジェクト生成用 CLI の計画。
+order: 1
 ---
 
 # CLI

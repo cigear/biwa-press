@@ -1,5 +1,5 @@
 ---
-title: Getting Started
+title: 概要
 description: Create and run your first Biwa Press docs site.
 order: 1
 ---

@@ -45,3 +45,24 @@ npm run build:csr
 npm run preview:csr
 npm run package:csr
 ```
+
+### Refreshing Document Cache
+
+Biwa Press caches sidebar structures and search indexes in production (SSR) mode for optimal response speed. If you update Markdown files on your VPS via SFTP or other means, you can force a cache refresh using the following `curl` command without restarting the Node.js process:
+
+```bash
+# Replace <YOUR_TOKEN> with the value of your REVALIDATE_TOKEN environment variable.
+# Replace <YOUR_DOMAIN> with your actual domain or IP (e.g., your-domain.com or 192.168.1.100:3000).
+curl -X POST \
+     -H "Authorization: Bearer <YOUR_TOKEN>" \
+     https://<YOUR_DOMAIN>/api/refresh-cache
+```
+
+#### Configuration Notes
+1. **Security**: This API is protected by `REVALIDATE_TOKEN`. Ensure you set a strong password for this environment variable on your VPS (e.g., in a `.env` file, pm2 configuration, or system environment variables).
+2. **Local Testing**:
+   ```bash
+   curl -X POST -H "Authorization: Bearer your-secret-token" http://localhost:5173/api/refresh-cache
+   ```
+3. **Scope**: This operation will re-scan the document directories to update the sidebar (Sidebar) directory tree and rebuild the search index (Search Index).
+```

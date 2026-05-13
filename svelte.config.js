@@ -38,20 +38,33 @@ const config = {
           const docsPath = path.resolve('docs');
           if (!fs.existsSync(docsPath)) return [];
           const entries = [];
+          
+          // 显式预渲染搜索索引 JSON
+          // 遍历所有语言，为每种语言的搜索索引 API 添加预渲染条目
+          const locales = fs.readdirSync(docsPath).filter(f => fs.statSync(path.join(docsPath, f)).isDirectory());
+          locales.forEach(l => entries.push(`/api/search-index/${l}.json`));
+
           const walk = (dir) => {
             fs.readdirSync(dir).forEach(file => {
               const fullPath = path.join(dir, file);
-              if (fs.statSync(fullPath).isDirectory()) {
+              const stat = fs.statSync(fullPath);
+              if (stat.isDirectory()) {
                 walk(fullPath);
               } else if (file.endsWith('.md') || file.endsWith('.svx')) {
                 const relative = path.relative(docsPath, fullPath).replace(/\\/g, '/');
                 const [locale, ...slugParts] = relative.replace(/\.(md|svx)$/, '').split('/');
-                entries.push(`/${locale}/docs/${slugParts.join('/')}`);
+                
+                // 规范化 slug，移除末尾的 /index
+                let slug = slugParts.join('/');
+                if (slug.endsWith('/index')) slug = slug.replace(/\/index$/, '');
+                if (slug === 'index') slug = '';
+                
+                entries.push(`/${locale}/docs/${slug}`);
               }
             });
           };
           walk(docsPath);
-          return entries;
+          return [...new Set(entries)]; // 去重
         })()
       ],
       handleUnseenRoutes: 'warn'

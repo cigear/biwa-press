@@ -1,18 +1,18 @@
 ---
-title: 設定
-description: ナビゲーション、サイドバー、サイトメタ情報を設定します。
-order: 2
+title: Overview
+description: Configure navigation, sidebar, and site metadata.
+order: 1
 ---
 
-# 設定
+# Configuration
 
-サイトメタ情報は `src/lib/config/site.ts` にあります。
+Site metadata lives in `src/lib/config/site.ts`.
 
-ナビゲーションは `src/lib/config/nav.ts` にあります。
+Navigation lives in `src/lib/config/nav.ts`.
 
-サイドバーのグループは `src/lib/config/sidebar.ts` にあります。
+Sidebar groups live in `src/lib/config/sidebar.ts`.
 
-これらは通常の TypeScript ファイルなので、後からフレームワークパッケージへ発展させられます。
+These files are plain TypeScript so your docs framework can grow into a package later.
 
 ## javascript1
 ```javascript showLineNumbers
@@ -43,4 +43,5 @@ console.log(hello);
 const hello = "Hello, World!";
 console.log(hello);
 ```
+
 

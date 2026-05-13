@@ -63,20 +63,20 @@
         </a>
       {:else if hasChildren}
         <button
-          class="flex-1 text-left py-1.5 text-xs font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-600 transition-colors"
+          class="flex-1 text-left py-1.5 px-2 -mx-2 text-sm font-bold text-zinc-600 hover:text-zinc-950 hover:bg-zinc-50 rounded-md transition-colors"
           onclick={() => handleGroupClick(item)}
         >
           {item.title}
         </button>
       {:else}
-        <h3 class="py-1.5 text-xs font-bold uppercase tracking-wider text-zinc-400">
+        <h3 class="py-1.5 px-2 -mx-2 text-sm font-bold text-zinc-600">
           {item.title}
         </h3>
       {/if}
 
       {#if hasChildren}
         <button
-          class="p-1 text-zinc-400 hover:text-zinc-950 transition-colors shrink-0"
+          class="p-1 text-zinc-600 hover:text-zinc-950 transition-colors shrink-0"
           onclick={() => handleGroupClick(item)}
           aria-label="Toggle group"
         >
@@ -89,7 +89,7 @@
     </div>
 
     {#if hasChildren && expandedGroups[item.title]}
-      <div class="mt-1 border-l border-zinc-100 pl-3">
+      <div class="mt-1 border-l border-zinc-100 ml-2 pl-4">
         {#each item.items as subItem}
           {@render navItem(subItem, depth + 1)}
         {/each}

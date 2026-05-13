@@ -1,18 +1,18 @@
 ---
-title: 配置
-description: 配置导航、侧边栏和站点元信息。
-order: 2
+title: 概要
+description: ナビゲーション、サイドバー、サイトメタ情報を設定します。
+order: 1
 ---
 
-# 配置
+# 設定
 
-站点元信息位于 `src/lib/config/site.ts`。
+サイトメタ情報は `src/lib/config/site.ts` にあります。
 
-顶部导航位于 `src/lib/config/nav.ts`。
+ナビゲーションは `src/lib/config/nav.ts` にあります。
 
-侧边栏分组位于 `src/lib/config/sidebar.ts`。
+サイドバーのグループは `src/lib/config/sidebar.ts` にあります。
 
-这些文件都是普通 TypeScript 文件，之后可以继续演进成真正的框架包。
+これらは通常の TypeScript ファイルなので、後からフレームワークパッケージへ発展させられます。
 
 ## javascript1
 ```javascript showLineNumbers
@@ -43,5 +43,4 @@ console.log(hello);
 const hello = "Hello, World!";
 console.log(hello);
 ```
-
 

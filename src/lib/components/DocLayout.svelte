@@ -4,10 +4,11 @@
   import type { Group } from '$lib/docs';
   import Header from './Header.svelte';
   import Sidebar from './Sidebar.svelte';
+  import Footer from './Footer.svelte';
+  import Breadcrumb from './Breadcrumb.svelte';
   import DocToc from './DocToc.svelte';
   import { ChevronRight, ChevronLeft } from '@lucide/svelte';
   import { t, locale as i18nLocale } from 'svelte-i18n';
-  import mermaid from 'mermaid';
 
   let { 
     locale, 
@@ -30,46 +31,6 @@
 
   let fetchedGroups = $state<Group[] | null>(null);
   let groups = $derived(fetchedGroups ?? initialGroups);
-
-  const breadcrumbs = $derived.by(() => {
-    const currentPath = page.url.pathname;
-    if (!currentPath.includes("/docs/")) return [];
-
-    const list: { title: string; href?: string }[] = [];
-
-    // 辅助函数：递归寻找分组下的第一个有效页面链接
-    function getFirstHref(item: Group): string | undefined {
-      if (item.slug) return `/${locale}/docs/${item.slug}`;
-      if (item.items) {
-        for (const sub of item.items) {
-          const h = getFirstHref(sub);
-          if (h) return h;
-        }
-      }
-      return undefined;
-    }
-
-    function find(items: Group[]): boolean {
-      for (const item of items) {
-        const itemHref = item.slug ? `/${locale}/docs/${item.slug}` : undefined;
-
-        if (itemHref === currentPath) {
-          list.push({ title: item.title, href: itemHref });
-          return true;
-        }
-
-        if (item.items && find(item.items)) {
-          // 如果父节点没有 slug，则链接到它下面的第一个有效页面
-          list.unshift({ title: item.title, href: itemHref || getFirstHref(item) });
-          return true;
-        }
-      }
-      return false;
-    }
-
-    find(groups);
-    return list;
-  });
 
   // 计算文档的上一页和下一页导航
   const pagination = $derived.by(() => {
@@ -151,6 +112,8 @@
     });
   });
 
+  let mermaidInitialized = false;
+
   // 渲染 Mermaid 图表
   $effect(() => {
     // 依赖页面路径变化
@@ -161,26 +124,32 @@
     const mermaidBlocks = document.querySelectorAll('pre code.language-mermaid');
 
     if (mermaidBlocks.length > 0) {
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: 'default',
-        fontFamily: 'var(--font-base)',
-        securityLevel: 'loose'
-      });
-
-      mermaidBlocks.forEach((block) => {
-        const pre = block.parentElement;
-        if (pre) {
-          pre.classList.add('mermaid');
-          // 将原始代码内容提取到 pre 标签中，这是 mermaid.run 期待的结构
-          pre.textContent = block.textContent;
-          // 移除复原按钮（如果有）
-          pre.querySelector('.copy-btn')?.remove();
+      import('mermaid').then((m) => {
+        const mermaid = m.default || m;
+        if (!mermaidInitialized) {
+          mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            fontFamily: 'var(--font-base)',
+            securityLevel: 'loose'
+          });
+          mermaidInitialized = true;
         }
-      });
 
-      mermaid.run({
-        querySelector: '.mermaid'
+        mermaidBlocks.forEach((block) => {
+          const pre = block.parentElement;
+          if (pre) {
+            pre.classList.add('mermaid');
+            // 将原始代码内容提取到 pre 标签中，这是 mermaid.run 期待的结构
+            pre.textContent = block.textContent;
+            // 移除复原按钮（如果有）
+            pre.querySelector('.copy-btn')?.remove();
+          }
+        });
+
+        mermaid.run({
+          querySelector: '.mermaid'
+        });
       });
     }
   });
@@ -192,29 +161,7 @@
   <Sidebar {locale} sidebar={groups} />
 
   <div class="flex flex-col min-w-0">
-    <!-- 面包屑导航：在所有屏幕显示 -->
-    {#if breadcrumbs.length > 0}
-      <nav class="sticky top-14 z-20 flex flex-wrap items-center gap-1.5 border-b border-zinc-100 bg-white py-2 text-sm text-zinc-500">
-        {#each breadcrumbs as crumb, i}
-          {#if i > 0}
-            <ChevronRight size={14} class="text-zinc-300" />
-          {/if}
-          {#if crumb.href && i < breadcrumbs.length - 1}
-            <a href={crumb.href} class="transition-colors hover:text-zinc-950">
-              {crumb.title}
-            </a>
-          {:else}
-            <span
-              class={i === breadcrumbs.length - 1
-                ? "font-medium text-zinc-950"
-                : ""}
-            >
-              {crumb.title}
-            </span>
-          {/if}
-        {/each}
-      </nav>
-    {/if}
+    <Breadcrumb {locale} {groups} />
 
     <main class="doc-content flex-1 pb-10 pt-4 lg:pb-12 lg:pt-6">
       {@render children()}
@@ -248,17 +195,11 @@
         {/if}
       </nav>
     </main>
-
-    <!-- 页面底部信息 -->
-    <footer class="mt-16 border-t border-zinc-100 py-8 text-sm text-zinc-500">
-      <div class="flex flex-col items-center justify-between gap-2 sm:flex-row">
-        <span class="text-zinc-400">Version 0.1.0</span>
-        <span>Powered by <a href="https://github.com/biwa-press" class="font-medium text-zinc-950 hover:underline">Biwa Press</a></span>
-      </div>
-    </footer>
   </div>
 
   <aside class="lg:block">
     <DocToc items={toc} minDepth={2} maxDepth={3} />
   </aside>
 </div>
+
+<Footer />
