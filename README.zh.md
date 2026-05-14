@@ -65,4 +65,46 @@ curl -X POST \
    curl -X POST -H "Authorization: Bearer your-secret-token" http://localhost:5173/api/refresh-cache
    ```
 3. **生效范围**：此操作将重新扫描文档目录以更新侧边栏（Sidebar）目录树，并重新构建搜索索引（Search Index）。
+
+# Biwa Press 媒体使用指南
+
+本项目支持在 Markdown 中通过标准语法或自定义扩展语法来使用图片和视频。
+
+## 图片 (Images)
+
+使用标准 Markdown 语法。请将图片文件放置在 `static/` 目录下（例如 `static/images/`）。
+
+```markdown
+![图片描述](/images/your-image.jpg)
 ```
+
+## 视频 (Videos)
+
+Biwa Press 支持增强的视频嵌入语法，允许你控制尺寸、比例、封面图以及开启懒加载。
+
+### 语法格式
+`::类型标题{width=宽度}{ratio=比例}{poster=封面路径}{lazy}`
+
+### 1. 本地视频
+```markdown
+::video[演示视频](/videos/1.mp4){width=300}{ratio=9:16}{poster=/videos/1.png}{lazy}
+```
+
+### 2. YouTube 视频
+```markdown
+::youtube[视频标题](YouTube_Video_ID){width=600}{ratio=16:9}{lazy}
+```
+
+### 3. Bilibili 视频
+```markdown
+::bilibili[视频标题](Bilibili_BV_ID){width=600}{ratio=16:9}{lazy}
+```
+
+### 参数详细说明
+- **类型**: 可选值为 `video` (本地文件), `youtube`, `bilibili`。
+- **{width=...}**: (可选) 设置视频的最大宽度（单位：像素）。
+- **{ratio=...}**: (可选) 设置宽高比，支持 `16:9`、`9:16`、`4:3` 等格式。
+- **{poster=...}**: (可选) 设置视频封面。强烈建议为本地视频设置封面，以解决 iOS 设备上的首帧白屏问题。
+- **{lazy}**: (可选) 开启懒加载模式。视频将在滚动到页面可见区域时才开始加载并自动静音播放。
+```
+

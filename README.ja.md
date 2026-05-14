@@ -65,4 +65,45 @@ curl -X POST \
    curl -X POST -H "Authorization: Bearer your-secret-token" http://localhost:5173/api/refresh-cache
    ```
 3. **適用範囲**：この操作により、サイドバーのディレクトリツリーが再スキャンされ、検索インデックスが再構築されます。
+
+## メディア使用ガイド
+
+Biwa Press は、画像の標準 Markdown 構文と、ビデオのカスタム拡張構文をサポートしています。
+
+### 画像 (Images)
+
+標準の Markdown 構文を使用します。画像ファイルは `static/` ディレクトリ（例：`static/images/`）に配置してください。
+
+```markdown
+![画像の説明](/images/your-image.jpg)
+```
+
+### ビデオ (Videos)
+
+Biwa Press は、サイズ、アスペクト比、ポスター画像、遅延読み込みを制御できる拡張ビデオ埋め込み構文をサポートしています。
+
+#### 構文
+`::タイプタイトル{width=幅}{ratio=比率}{poster=ポスターのパス}{lazy}`
+
+#### 1. ローカルビデオ
+```markdown
+::video[デモビデオ](/videos/1.mp4){width=300}{ratio=9:16}{poster=/videos/1.png}{lazy}
+```
+
+#### 2. YouTube ビデオ
+```markdown
+::youtube[ビデオタイトル](YouTube_Video_ID){width=600}{ratio=16:9}{lazy}
+```
+
+#### 3. Bilibili ビデオ
+```markdown
+::bilibili[ビデオタイトル](Bilibili_BV_ID){width=600}{ratio=16:9}{lazy}
+```
+
+#### パラメータ詳細
+- **タイプ**: `video` (ローカルファイル), `youtube`, `bilibili` から選択。
+- **{width=...}**: (オプション) ビデオの最大幅をピクセル単位で設定します。
+- **{ratio=...}**: (オプション) アスペクト比を設定します（例：`16:9`, `9:16`, `4:3`）。
+- **{poster=...}**: (オプション) ビデオのポスター画像を設定します。iOSデバイスでの白屏問題を解決するため、ローカルビデオには設定を強く推奨します。
+- **{lazy}**: (オプション) 遅延読み込みモードを有効にします。ビデオがビューポートに入ると読み込みを開始し、ミュート状態で自動再生されます。
 ```

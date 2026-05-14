@@ -65,4 +65,45 @@ curl -X POST \
    curl -X POST -H "Authorization: Bearer your-secret-token" http://localhost:5173/api/refresh-cache
    ```
 3. **Scope**: This operation will re-scan the document directories to update the sidebar (Sidebar) directory tree and rebuild the search index (Search Index).
+
+## Media Usage Guide
+
+Biwa Press supports standard Markdown for images and a custom extended syntax for videos.
+
+### Images
+
+Use standard Markdown syntax. Place image files in the `static/` directory (e.g., `static/images/`).
+
+```markdown
+![Image Description](/images/your-image.jpg)
+```
+
+### Videos
+
+Biwa Press supports enhanced video embedding, allowing control over dimensions, aspect ratio, posters, and lazy loading.
+
+#### Syntax
+`::typetitle{width=number}{ratio=width:height}{poster=path}{lazy}`
+
+#### 1. Local Video
+```markdown
+::video[Demo Video](/videos/1.mp4){width=300}{ratio=9:16}{poster=/videos/1.png}{lazy}
+```
+
+#### 2. YouTube
+```markdown
+::youtube[Video Title](YouTube_Video_ID){width=600}{ratio=16:9}{lazy}
+```
+
+#### 3. Bilibili
+```markdown
+::bilibili[Video Title](Bilibili_BV_ID){width=600}{ratio=16:9}{lazy}
+```
+
+#### Parameters
+- **Type**: `video` (local file), `youtube`, or `bilibili`.
+- **{width=...}**: (Optional) Max width in pixels.
+- **{ratio=...}**: (Optional) Aspect ratio (e.g., `16:9`, `9:16`, `4:3`).
+- **{poster=...}**: (Optional) Video poster image. Highly recommended for local videos to prevent white screens on iOS.
+- **{lazy}**: (Optional) Enables lazy loading. Videos start loading and play muted when scrolled into view.
 ```

@@ -26,3 +26,17 @@ npm run build
 
 The static output is written to `build/`.
 
+## Image
+```
+![我的描述](/images/img_0001.jpg)
+```
+![我的描述](/images/img_0001.jpg)
+
+
+## Video
+```
+::video[演示视频](/videos/1.mp4){width=300}{ratio=9:16}{poster=/videos/1.png}{lazy}
+```
+
+
+

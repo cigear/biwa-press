@@ -5,7 +5,7 @@ import type { SidebarItem, Group } from '$lib/docs';
 import fs from 'node:fs';
 import path from 'node:path';
 import matter from 'gray-matter';
-import { marked } from 'marked';
+import { marked, type Tokens } from 'marked';
 import { createHighlighter } from 'shiki';
 import { transformerMetaHighlight } from '@shikijs/transformers';
 import GithubSlugger from 'github-slugger';
@@ -18,6 +18,131 @@ function getDocsRoot() {
 
 /** Shiki 高亮器单例，用于在运行时解析 Markdown 代码块 */
 let highlighterPromise: Promise<any> | null = null;
+
+// 定义自定义视频 Token 的类型，扩展 Tokens.Generic 以符合 marked 的扩展规范
+interface VideoEmbedToken extends Tokens.Generic {
+  type: 'videoEmbed';
+  videoType: 'video' | 'youtube' | 'bilibili';
+  altOrTitle: string;
+  urlOrId: string;
+  width?: string;
+  ratio?: string;
+  poster?: string;
+  lazy?: boolean; // Add a new property for lazy loading
+  tokens: []; // 这种简单的嵌入不需要嵌套解析
+}
+
+// 注册 marked 扩展 (在服务器端全局注册一次即可)
+marked.use({
+  extensions: [
+    {
+      name: 'videoEmbed',
+      level: 'block',
+      start(src: string) {
+        return src.match(/^::(video|youtube|bilibili)\[/)?.index;
+      },
+      tokenizer(src: string): VideoEmbedToken | undefined {
+        // 更新正则，增加对 {width=xxx}、{ratio=xxx}、{poster=xxx} 和 {lazy} 的可选匹配
+        const rule = /^::(video|youtube|bilibili)\[([^\]]+)\]\(([^)]+)\)(?:\{width=(\d+)\})?(?:\{ratio=([\d/:]+)\})?(?:\{poster=([^}]+)\})?(?:\{lazy\})?/;
+        const match = rule.exec(src);
+        if (match) {
+          return {
+            type: 'videoEmbed',
+            raw: match[0],
+            videoType: match[1] as 'video' | 'youtube' | 'bilibili',
+            altOrTitle: match[2],
+            urlOrId: match[3],
+            width: match[4], // 捕获到的宽度数字
+            ratio: match[5], // 捕获到的比例 (如 16:9 或 4/3)
+            poster: match[6], // 捕获到的封面图路径
+            lazy: !!match[7], // 捕获到的 {lazy} 标记
+            tokens: []
+          };
+        }
+        return undefined;
+      },
+      renderer(token: Tokens.Generic) {
+        const t = token as VideoEmbedToken;
+        
+        // 构建动态样式
+        let styles = [];
+        if (t.width) {
+          styles.push(`max-width: ${t.width}px`, `width: 100%`);
+        } else {
+          styles.push(`width: 100%`);
+        }
+        
+        if (t.ratio) {
+          // 将 16:9 转换为 CSS 标准的 16 / 9
+          const cssRatio = t.ratio.replace(':', ' / ');
+          styles.push(`aspect-ratio: ${cssRatio}`);
+        }
+        
+        const containerStyle = `style="${styles.join('; ')}; overflow: hidden; position: relative;"`;
+        const innerStyle = t.ratio ? `style="width: 100%; height: 100%; object-fit: cover; display: block;"` : `style="width: 100%; height: auto; display: block;"`;
+
+        const posterAttr = t.poster ? `poster="${t.poster}"` : '';
+        const dataPosterAttr = t.poster ? `data-poster="${t.poster}"` : ''; // For JS to potentially use
+        const lazyClass = t.lazy ? 'js-lazy-video' : ''; // Add a class for JavaScript to target
+
+        if (t.videoType === 'video') {
+          // iOS 技巧：在 URL 后添加 #t=0.001 强制渲染第一帧，解决白屏问题
+          const videoSrc = t.urlOrId.includes('#') ? t.urlOrId : `${t.urlOrId}#t=0.001`;
+          const srcAttribute = t.lazy ? `data-src="${videoSrc}"` : `src="${videoSrc}"`;
+          // 即使是延迟加载，也应在 HTML 中预设 autoplay muted，以最大化 iOS 自动播放的可能性
+          const autoplayMutedAttrs = 'autoplay muted';
+
+          return `<div class="video-embed-container ${lazyClass}" data-video-type="video" ${dataPosterAttr} ${containerStyle}>
+                    <video 
+                      controls 
+                      playsinline 
+                      preload="metadata" 
+                      ${autoplayMutedAttrs}
+                      ${posterAttr}
+                      title="${t.altOrTitle}" 
+                      ${innerStyle}>
+                      <source ${srcAttribute}>
+                      您的浏览器不支持视频标签。
+                    </video>
+                  </div>`;
+        } else if (t.videoType === 'youtube') {
+          const iframeSrc = `https://www.youtube.com/embed/${t.urlOrId}`;
+          // For iframes, we use data-src when lazy, and let JS handle moving it to src and adding autoplay params.
+          // 对于 YouTube，直接在 URL 中添加自动播放和静音参数
+          const finalIframeSrc = t.lazy ? iframeSrc : `${iframeSrc}?autoplay=1&mute=1`;
+          const srcAttribute = t.lazy ? `data-src="${finalIframeSrc}"` : `src="${finalIframeSrc}"`;
+          // Note: We remove native loading="lazy" when using data-src and IntersectionObserver for autoplay,
+          // as our JS will explicitly control the loading and playback.
+
+          return `<div class="video-embed-container ${lazyClass}" data-video-type="youtube" ${dataPosterAttr} ${containerStyle}>
+                    <iframe 
+                      ${srcAttribute}
+                      title="${t.altOrTitle}" 
+                      style="width: 100%; height: 100%; border: 0;"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                      allowfullscreen>
+                    </iframe>
+                  </div>`;
+        } else if (t.videoType === 'bilibili') {
+          const iframeSrc = `//player.bilibili.com/player.html?bvid=${t.urlOrId}&page=1`;
+          const srcAttribute = t.lazy ? `data-src="${iframeSrc}"` : `src="${iframeSrc}"`;
+
+          return `<div class="video-embed-container ${lazyClass}" data-video-type="bilibili" ${dataPosterAttr} ${containerStyle}>
+                    <iframe 
+                      ${srcAttribute}
+                      style="width: 100%; height: 100%; border: 0;" 
+                      scrolling="no" 
+                      framespacing="0" 
+                      allowfullscreen="true" 
+                      title="${t.altOrTitle}">
+                    </iframe>
+                  </div>`;
+        }
+        return false;
+      }
+    }
+  ]
+});
 
 /* ---------------------------------------------
  * loadDoc
@@ -129,7 +254,7 @@ export async function loadDoc(locale: Locale, slug: string) {
     });
   };
 
-  // 将 Markdown 转换为 HTML
+  // 将 Markdown 转换为 HTML，并注册自定义扩展
   const html = await marked.parse(content, { renderer });
 
   return {
