@@ -9,9 +9,14 @@ Markdown から美しい SvelteKit ドキュメントへ。
 
 このスターターは、SvelteKit ルーティング、mdsvex コンテンツ、Tailwind CSS 4、Bits UI、静的出力を備えた VitePress 風の土台です。
 
-## 目的
+:::button
+[開始](/ja/docs/guide/getting-started)
+:::
 
-- Markdown でコンテンツを書く。
-- Svelte コンポーネントでテーマを管理する。
-- 静的 HTML にビルドする。
-- インターフェースを自由にカスタマイズする。
+## タイムライン
+:::timeline
+- **2023/10/26**
+  - VitePress 1.0.0-rc.1 released.
+- **2023/07/14**
+  - VitePress 1.0.0-beta.7 released.
+:::

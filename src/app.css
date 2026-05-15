@@ -145,3 +145,411 @@
   justify-content: center;
   overflow: visible;
 }
+
+.vp-timeline {
+  position: relative;
+  margin: 2rem 0;
+  padding-left: 20px; /* 为时间线轴留出空间 */
+}
+
+.vp-timeline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 2px; /* 时间线轴的宽度 */
+  background-color: #e4e4e7; /* 使用 zinc-200, 类似 VitePress 的分割线颜色 */
+}
+
+/* 假设时间线内部是无序列表 */
+.vp-timeline ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.vp-timeline li {
+  position: relative;
+  margin-bottom: 2rem; /* 每个时间线项之间的间距 */
+  padding-left: 24px; /* 增加一点间距 */
+}
+
+.vp-timeline li::before {
+  content: '';
+  position: absolute;
+  top: 0.5em; /* 调整点的位置，使其与文本基线对齐 */
+  left: -24px; /* 修正位置使其在 2px 轴线上居中 (-20px container padding - 4px edge offset) */
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #18181b; /* 改为黑色 */
+  border: 2px solid #ffffff; /* 点的边框，使用白色背景色营造浮动效果 */
+  box-sizing: border-box;
+  z-index: 1; /* 确保点在时间线轴之上 */
+}
+
+.vp-timeline li:last-child {
+  margin-bottom: 0; /* 最后一个时间线项下方没有额外间距 */
+}
+
+/* 针对时间线项内部的标题或日期 */
+.vp-timeline li strong {
+  display: block;
+  font-size: 1.1em;
+  margin-bottom: 0.5rem;
+  color: #18181b; /* zinc-900 */
+}
+
+/* 针对时间线项内部的普通文本 */
+.vp-timeline li p {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: #52525b; /* zinc-600 */
+}
+
+/* 针对时间线项内部的嵌套列表（如果存在） */
+.vp-timeline li ul {
+  margin-top: 0.5rem;
+  margin-left: 1.5rem;
+  list-style: disc; /* 嵌套列表使用圆点 */
+}
+
+.vp-timeline li ul li {
+  padding-left: 0; /* 移除嵌套列表项的额外左边距 */
+}
+
+.vp-timeline li ul li::before {
+  content: none; /* 移除嵌套列表项的时间线点 */
+}
+
+/* Gallery 九宫格样式 */
+.vp-gallery {
+  margin: 1.5rem 0;
+}
+
+.vp-gallery, 
+.vp-gallery ul {
+  display: grid;
+  /* 移动端 2 列，桌面端 3 列（九宫格标准） */
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* 如果内部有 ul，则让外层 div 仅作为容器，由 ul 负责网格布局 */
+.vp-gallery:has(ul) {
+  display: block;
+}
+
+@media (min-width: 640px) {
+  .vp-gallery,
+  .vp-gallery ul {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.vp-gallery li {
+  margin: 0 !important;
+  aspect-ratio: 1 / 1; /* 强制正方形 */
+  overflow: hidden;
+  border-radius: 8px;
+  background-color: #f4f4f5;
+  /* Make li a flex container to center its content */
+  display: flex;
+  align-items: center; /* Vertically center the p element */
+  justify-content: center; /* Horizontally center the p element */
+}
+
+.vp-gallery li p {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%; /* Ensure p takes full width of li */
+  height: 100%; /* Ensure p takes full height of li */
+  display: flex; /* Make p a flex container to center the img */
+  align-items: center; /* Vertically center the img element */
+  justify-content: center; /* Horizontally center the img element */
+  line-height: 0; /* 消除文字行高导致的额外偏移 */
+}
+
+.zoomable-img {
+  cursor: zoom-in;
+  -webkit-tap-highlight-color: transparent; /* 移除 iOS 点击时的高亮外框 */
+}
+
+/* 灯箱遮罩层样式 */
+#img-zoom-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+}
+
+#img-zoom-overlay img {
+  max-width: 95vw;
+  max-height: 95vh;
+  object-fit: contain;
+  user-select: none;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Tabs 样式 */
+.vp-tabs {
+  margin: 1.5rem 0;
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex; /* 使用 Flexbox 布局 */
+  flex-wrap: wrap; /* 允许项目换行 */
+}
+
+.vp-tab-input {
+  display: none; /* 隐藏单选框 */
+}
+
+.vp-tab-label {
+  display: inline-block;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  color: #71717a;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  order: 1; /* 确保所有标签页标题排在前面 */
+}
+
+.vp-tab-label:hover {
+  color: #18181b;
+}
+
+/* 当单选框被选中时，对应的 label 样式 */
+.vp-tab-input:checked + .vp-tab-label {
+  color: #18181b;
+  border-bottom-color: #18181b;
+  background-color: #f8fafc;
+  font-weight: 600; /* 选中状态加粗 */
+}
+
+.vp-tab-content {
+  display: none; /* 默认隐藏所有内容 */
+  order: 2; /* 内容区域排在标签页标题之后 */
+  width: 100%; /* 内容区域占据整行 */
+  padding: 16px;
+  background: #fff;
+  border-top: 1px solid #e4e4e7;
+}
+
+.vp-tab-input:checked + .vp-tab-label + .vp-tab-content {
+  display: block;
+}
+
+.vp-gallery img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain; /* 改为 contain 确保看到图片全貌，不被裁剪 */
+  display: block;
+  margin: 0 auto;
+  transition: transform 0.3s ease;
+}
+
+.vp-gallery img:hover {
+  transform: scale(1.05);
+}
+
+/* 当 Card 放入 Gallery 时的优化 */
+.vp-gallery .vp-card {
+  margin: 0 !important; /* 移除外边距以适应网格 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.vp-gallery .vp-card-content {
+  flex: 1;
+}
+
+/* Details / Collapse 样式 */
+.vp-details {
+  margin: 1.5rem 0;
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+  background-color: #fafafa;
+  padding: 12px 16px;
+  transition: background-color 0.2s;
+}
+
+.vp-details-summary {
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  color: #18181b; /* 保持黑色风格 */
+}
+
+.vp-details[open] {
+  background-color: #ffffff;
+}
+
+.vp-details[open] .vp-details-summary {
+  margin-bottom: 12px;
+  border-bottom: 1px solid #e4e4e7;
+  padding-bottom: 8px;
+}
+
+.vp-details-content {
+  color: #52525b; /* zinc-600 内容颜色稍淡 */
+}
+
+/* Card 样式 */
+.vp-card {
+  margin: 1.5rem 0;
+  border: 1px solid #e4e4e7;
+  border-radius: 12px;
+  background-color: #ffffff;
+  display: block;
+  text-decoration: none !important;
+  color: inherit;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.vp-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+}
+
+.vp-card-title {
+  padding: 20px 20px 0;
+  font-weight: 700;
+  font-size: 1.1rem;
+  border-bottom: none;
+  color: #18181b;
+  background-color: transparent;
+}
+
+.vp-card-content {
+  padding: 20px;
+  color: #52525b;
+}
+
+.vp-card-title + .vp-card-content {
+  padding-top: 8px;
+}
+
+.vp-card-content :first-child { margin-top: 0; }
+.vp-card-content :last-child { margin-bottom: 0; }
+
+/* Button Container 样式 */
+.vp-button-container {
+  margin: 2rem 0;
+}
+
+.vp-button-container p {
+  margin: 0 !important;
+}
+
+.vp-button-container a {
+  display: inline-block !important;
+  background-color: #09090b !important; /* zinc-950 黑底 */
+  color: #ffffff !important; /* 白字 */
+  padding: 0.6rem 1.5rem !important;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none !important; /* 强制取消下划线 */
+  transition: all 0.2s ease;
+}
+
+.vp-button-container a:hover {
+  background-color: #27272a !important; /* zinc-800 悬停变浅 */
+  text-decoration: none !important;
+}
+
+/* GitHub Embed Styles */
+.vp-github-embed {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+  background-color: #fafafa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.vp-github-repo-card {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: #18181b;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: color 0.2s;
+}
+
+.vp-github-repo-card:hover {
+  color: var(--color-brand); /* Use brand color on hover */
+}
+
+.vp-github-icon {
+  fill: currentColor; /* Use current text color for SVG */
+  width: 24px;
+  height: 24px;
+}
+
+.vp-github-arrow {
+  margin-left: 0.5rem;
+  font-size: 1.2em;
+}
+
+/* Gist specific styles */
+.vp-github-gist {
+  /* Gist embeds are handled by their script, so minimal styling here */
+  display: block; /* Override flex for Gist to allow script to render */
+  text-align: left; /* Gist content is usually left-aligned */
+}
+
+.vp-github-gist script {
+  display: block; /* Ensure script takes up space */
+}
+
+.vp-github-fallback {
+  font-size: 0.9em;
+  color: #71717a;
+  margin-top: 0.5rem;
+}
+
+
+/* Card Content Headings */
+.vp-card-content h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #18181b;
+  margin: 1.5rem 0 1rem;
+}
+
+.vp-card-content h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #18181b;
+  margin: 1.25rem 0 0.75rem;
+}
+
+.vp-card-content h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #18181b;
+  margin: 1rem 0 0.5rem;
+}

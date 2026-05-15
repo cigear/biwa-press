@@ -1,12 +1,10 @@
 import { isLocale, type Locale } from '$lib/config/locales';
 import type { SearchEntry } from './types';
-import fs from 'node:fs';
 import path from 'node:path';
+import { DocRepository } from '$lib/infrastructure/storage/doc-repository';
 
 /** 内存缓存，避免频繁扫描磁盘 */
 let searchIndexCache: Record<string, SearchEntry[]> = {};
-
-const getDocsRoot = () => path.resolve(process.cwd(), 'docs');
 
 function parseFrontmatter(markdown: string) {
   const match = markdown.match(/^---\s*([\s\S]*?)\s*---\s*([\s\S]*)$/);
@@ -46,19 +44,19 @@ function toPlainText(markdown: string) {
 
 /** 扫描磁盘生成指定语言的搜索索引 */
 export function buildSearchIndex(locale: Locale): SearchEntry[] {
-  const docsRoot = getDocsRoot();
+  const docsRoot = DocRepository.getDocsRoot();
   const localeDir = path.join(docsRoot, locale);
   const entries: SearchEntry[] = [];
 
-  if (!fs.existsSync(localeDir)) return [];
+  if (!DocRepository.exists(localeDir)) return [];
 
   function walk(dir: string) {
-    const files = fs.readdirSync(dir);
+    const files = DocRepository.readDir(dir);
     for (const file of files) {
       const fullPath = path.join(dir, file);
-      const stat = fs.statSync(fullPath);
+      const isDirectory = DocRepository.isDir(fullPath);
 
-      if (stat.isDirectory()) {
+      if (isDirectory) {
         walk(fullPath);
       } else if (file.endsWith('.md')) {
         // index.md 仅用于目录元数据，不作为独立的搜索结果页面
@@ -69,7 +67,7 @@ export function buildSearchIndex(locale: Locale): SearchEntry[] {
         
         if (lang !== locale) continue;
 
-        const markdown = fs.readFileSync(fullPath, 'utf-8');
+        const markdown = DocRepository.readText(fullPath);
         const normalizedSlug = slugParts.join('/').replace(/\/index$/, '');
         const slug = normalizedSlug === 'index' ? '' : normalizedSlug;
         

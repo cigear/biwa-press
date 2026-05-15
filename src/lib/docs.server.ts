@@ -5,172 +5,73 @@ import type { SidebarItem, Group } from '$lib/docs';
 import fs from 'node:fs';
 import path from 'node:path';
 import matter from 'gray-matter';
-import { marked, type Tokens } from 'marked';
+import { marked, Renderer, type Token, type Tokens } from 'marked';
 import { createHighlighter } from 'shiki';
 import { transformerMetaHighlight } from '@shikijs/transformers';
 import GithubSlugger from 'github-slugger';
 import { dev } from '$app/environment';
+import { DocRepository } from '$lib/infrastructure/storage/doc-repository';
+import { videoEmbedExtension } from '$lib/markdown/extensions/video-embed';
+import { timelineExtension } from '$lib/markdown/extensions/timeline';
+import { galleryExtension } from '$lib/markdown/extensions/gallery';
+import { tabsExtension } from '$lib/markdown/extensions/tabs';
+import { collapseExtension } from '$lib/markdown/extensions/collapse';
+import { cardExtension } from '$lib/markdown/extensions/card';
+import { githubExtension } from '$lib/markdown/extensions/github';
+import { buttonExtension } from '$lib/markdown/extensions/button';
 
-// 由于该文件现在仅在服务器运行，不再需要 browser 检查
-function getDocsRoot() {
-  return path.resolve(process.cwd(), 'docs');
-}
-
-/** Shiki 高亮器单例，用于在运行时解析 Markdown 代码块 */
 let highlighterPromise: Promise<any> | null = null;
-
-// 定义自定义视频 Token 的类型，扩展 Tokens.Generic 以符合 marked 的扩展规范
-interface VideoEmbedToken extends Tokens.Generic {
-  type: 'videoEmbed';
-  videoType: 'video' | 'youtube' | 'bilibili';
-  altOrTitle: string;
-  urlOrId: string;
-  width?: string;
-  ratio?: string;
-  poster?: string;
-  lazy?: boolean; // Add a new property for lazy loading
-  tokens: []; // 这种简单的嵌入不需要嵌套解析
-}
 
 // 注册 marked 扩展 (在服务器端全局注册一次即可)
 marked.use({
-  extensions: [
-    {
-      name: 'videoEmbed',
-      level: 'block',
-      start(src: string) {
-        return src.match(/^::(video|youtube|bilibili)\[/)?.index;
-      },
-      tokenizer(src: string): VideoEmbedToken | undefined {
-        // 更新正则，增加对 {width=xxx}、{ratio=xxx}、{poster=xxx} 和 {lazy} 的可选匹配
-        const rule = /^::(video|youtube|bilibili)\[([^\]]+)\]\(([^)]+)\)(?:\{width=(\d+)\})?(?:\{ratio=([\d/:]+)\})?(?:\{poster=([^}]+)\})?(?:\{lazy\})?/;
-        const match = rule.exec(src);
-        if (match) {
-          return {
-            type: 'videoEmbed',
-            raw: match[0],
-            videoType: match[1] as 'video' | 'youtube' | 'bilibili',
-            altOrTitle: match[2],
-            urlOrId: match[3],
-            width: match[4], // 捕获到的宽度数字
-            ratio: match[5], // 捕获到的比例 (如 16:9 或 4/3)
-            poster: match[6], // 捕获到的封面图路径
-            lazy: !!match[7], // 捕获到的 {lazy} 标记
-            tokens: []
-          };
-        }
-        return undefined;
-      },
-      renderer(token: Tokens.Generic) {
-        const t = token as VideoEmbedToken;
-        
-        // 构建动态样式
-        let styles = [];
-        if (t.width) {
-          styles.push(`max-width: ${t.width}px`, `width: 100%`);
-        } else {
-          styles.push(`width: 100%`);
-        }
-        
-        if (t.ratio) {
-          // 将 16:9 转换为 CSS 标准的 16 / 9
-          const cssRatio = t.ratio.replace(':', ' / ');
-          styles.push(`aspect-ratio: ${cssRatio}`);
-        }
-        
-        const containerStyle = `style="${styles.join('; ')}; overflow: hidden; position: relative;"`;
-        const innerStyle = t.ratio ? `style="width: 100%; height: 100%; object-fit: cover; display: block;"` : `style="width: 100%; height: auto; display: block;"`;
-
-        const posterAttr = t.poster ? `poster="${t.poster}"` : '';
-        const dataPosterAttr = t.poster ? `data-poster="${t.poster}"` : ''; // For JS to potentially use
-        const lazyClass = t.lazy ? 'js-lazy-video' : ''; // Add a class for JavaScript to target
-
-        if (t.videoType === 'video') {
-          // iOS 技巧：在 URL 后添加 #t=0.001 强制渲染第一帧，解决白屏问题
-          const videoSrc = t.urlOrId.includes('#') ? t.urlOrId : `${t.urlOrId}#t=0.001`;
-          const srcAttribute = t.lazy ? `data-src="${videoSrc}"` : `src="${videoSrc}"`;
-          // 即使是延迟加载，也应在 HTML 中预设 autoplay muted，以最大化 iOS 自动播放的可能性
-          const autoplayMutedAttrs = 'autoplay muted';
-
-          return `<div class="video-embed-container ${lazyClass}" data-video-type="video" ${dataPosterAttr} ${containerStyle}>
-                    <video 
-                      controls 
-                      playsinline 
-                      preload="metadata" 
-                      ${autoplayMutedAttrs}
-                      ${posterAttr}
-                      title="${t.altOrTitle}" 
-                      ${innerStyle}>
-                      <source ${srcAttribute}>
-                      您的浏览器不支持视频标签。
-                    </video>
-                  </div>`;
-        } else if (t.videoType === 'youtube') {
-          const iframeSrc = `https://www.youtube.com/embed/${t.urlOrId}`;
-          // For iframes, we use data-src when lazy, and let JS handle moving it to src and adding autoplay params.
-          // 对于 YouTube，直接在 URL 中添加自动播放和静音参数
-          const finalIframeSrc = t.lazy ? iframeSrc : `${iframeSrc}?autoplay=1&mute=1`;
-          const srcAttribute = t.lazy ? `data-src="${finalIframeSrc}"` : `src="${finalIframeSrc}"`;
-          // Note: We remove native loading="lazy" when using data-src and IntersectionObserver for autoplay,
-          // as our JS will explicitly control the loading and playback.
-
-          return `<div class="video-embed-container ${lazyClass}" data-video-type="youtube" ${dataPosterAttr} ${containerStyle}>
-                    <iframe 
-                      ${srcAttribute}
-                      title="${t.altOrTitle}" 
-                      style="width: 100%; height: 100%; border: 0;"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                      allowfullscreen>
-                    </iframe>
-                  </div>`;
-        } else if (t.videoType === 'bilibili') {
-          const iframeSrc = `//player.bilibili.com/player.html?bvid=${t.urlOrId}&page=1`;
-          const srcAttribute = t.lazy ? `data-src="${iframeSrc}"` : `src="${iframeSrc}"`;
-
-          return `<div class="video-embed-container ${lazyClass}" data-video-type="bilibili" ${dataPosterAttr} ${containerStyle}>
-                    <iframe 
-                      ${srcAttribute}
-                      style="width: 100%; height: 100%; border: 0;" 
-                      scrolling="no" 
-                      framespacing="0" 
-                      allowfullscreen="true" 
-                      title="${t.altOrTitle}">
-                    </iframe>
-                  </div>`;
-        }
-        return false;
-      }
-    }
-  ]
+  extensions: [videoEmbedExtension, timelineExtension, galleryExtension, tabsExtension, collapseExtension, cardExtension, githubExtension, buttonExtension]
 });
 
-/* ---------------------------------------------
- * loadDoc
- * --------------------------------------------- */
-export async function loadDoc(locale: Locale, slug: string) {
-  const normalized = slug === '' ? 'index' : slug;
-  const docsRoot = getDocsRoot();
-  
-  // 尝试匹配文件路径
-  const possiblePaths = [
-    path.join(docsRoot, locale, `${normalized}.md`),
-    path.join(docsRoot, locale, normalized, 'index.md')
-  ];
+/* ------------------------------------------------------------------
+ * 3. [Application Layer] - Use Cases (核心逻辑)
+ * ------------------------------------------------------------------ */
 
-  let filePath = '';
-  for (const p of possiblePaths) {
-    if (fs.existsSync(p)) {
-      filePath = p;
-      break;
-    }
+// Helper to convert an absolute file path to a SvelteKit slug
+function getSlugFromAbsolutePath(absolutePath: string, docsRoot: string): string {
+  const relativePath = path.relative(docsRoot, absolutePath).replace(/\\/g, '/');
+  let slug = relativePath.replace(/\.md$/, '');
+
+  // Remove locale prefix from slug, as it's handled by SvelteKit route
+  const parts = slug.split('/');
+  if (isLocale(parts[0] as Locale)) { // Check if the first part is a locale
+    slug = parts.slice(1).join('/');
   }
 
+  // Handle index.md special case
+  if (slug.endsWith('/index')) {
+    slug = slug.replace(/\/index$/, '');
+  }
+  if (slug === 'index') { // For docs/en/index.md
+    slug = '';
+  }
+  return slug;
+}
+
+/**
+ * 加载并无条件渲染一个 Markdown 文件
+ */
+export async function loadMarkdownFile(locale: Locale, slug: string) {
+  return loadDoc(locale, slug, true);
+}
+
+/**
+ * 加载文档。
+ * @param raw 如果为 true，则跳过目录文件的子文件查找逻辑，直接渲染文件内容。
+ */
+export async function loadDoc(locale: Locale, slug: string, raw = false) {
+  const normalized = slug === '' ? 'index' : slug;
+  const docsRoot = DocRepository.getDocsRoot();
+  const filePath = DocRepository.resolvePath(locale, slug);
   if (!filePath) {
-    // 当请求的文档在目标语言中不存在时（例如切换语言后），自动重定向到该语言的首页
     throw redirect(307, `/${locale}/`);
   }
 
-  const fileContent = fs.readFileSync(filePath, 'utf-8');
+  const fileContent = DocRepository.readText(filePath);
   
   let data: any = {};
   let content = fileContent;
@@ -180,15 +81,15 @@ export async function loadDoc(locale: Locale, slug: string) {
     data = parsed.data;
     content = parsed.content;
 
-    if (filePath.endsWith('index.md')) {
+    if (filePath.endsWith('index.md') && !raw) {
       // 根据要求：index.md 本身不显示内容。
       // 如果访问的是目录 URL（匹配到 index.md），则自动查找目录下 order 最小的第一个有效子文件作为内容显示。
       const dir = path.dirname(filePath);
-      const siblings = fs.readdirSync(dir)
+      const siblings = DocRepository.readDir(dir)
         .filter(f => f.endsWith('.md') && f.toLowerCase() !== 'index.md')
         .map(f => {
           const p = path.join(dir, f);
-          const m = matter(fs.readFileSync(p, 'utf-8'));
+          const m = matter(DocRepository.readText(p));
           return { content: m.content, order: m.data.order ?? 999 };
         })
         .sort((a, b) => a.order - b.order);
@@ -200,8 +101,7 @@ export async function loadDoc(locale: Locale, slug: string) {
       }
     }
   } catch (e: any) {
-    console.warn(`[Biwa Press] Malformed frontmatter in ${filePath}. Use quotes for values containing colons. Error: ${e.reason || e.message}`);
-    // 发生错误时，data 保持为空，content 为原始文件内容
+    console.warn(`[Biwa Press] Malformed frontmatter in ${filePath}. Error: ${e.message}`);
   }
   
   // 确保 Shiki 已初始化
@@ -217,7 +117,38 @@ export async function loadDoc(locale: Locale, slug: string) {
   const toc: { depth: number; text: string; slug: string }[] = [];
 
   // 配置自定义渲染器以生成标题 ID 并同步提取 TOC 数据
-  const renderer = new marked.Renderer();
+  const renderer = new Renderer() as Renderer & {
+    currentLocale: Locale;
+    currentFilePath: string;
+    docsRoot: string;
+  };
+
+  // 配置图片渲染：点击利用浏览器 Fullscreen API 放大
+  renderer.image = (...args: any[]) => {
+    const isToken = typeof args[0] === 'object' && args[0] !== null;
+    const href = isToken ? args[0].href : args[0];
+    const text = isToken ? args[0].text : args[1];
+    const title = isToken ? args[0].title : args[2];
+
+    return `<img src="${href}" alt="${text || ''}" title="${title || '点击放大查看'}" 
+      onclick="const v=document.getElementById('img-zoom-overlay')||Object.assign(document.body.appendChild(document.createElement('div')),{id:'img-zoom-overlay',onclick:function(){this.style.display='none'}});v.innerHTML='<img src=\\''+this.src+'\\'>';v.style.display='flex'" 
+      class="zoomable-img" />`;
+  };
+
+  // 配置链接渲染：处理内部 Markdown 文件的链接
+  renderer.link = (href, title, text) => {
+    // Only process relative links that end with .md and are not absolute paths or external URLs
+    if (href && !href.startsWith('http') && !href.startsWith('/') && href.endsWith('.md')) {
+      const currentDir = path.dirname(filePath); // Use the current file's directory
+      const absoluteLinkedFilePath = path.resolve(currentDir, href);
+      const resolvedSlug = getSlugFromAbsolutePath(absoluteLinkedFilePath, docsRoot);
+      const finalHref = `/${locale}/docs/${resolvedSlug}`;
+      return `<a href="${finalHref}"${title ? ` title="${title}"` : ''}>${text}</a>`;
+    }
+    // Default behavior for external links, absolute paths, or non-Markdown links
+    return Renderer.prototype.link.call(renderer, href, title, text);
+  };
+
   renderer.heading = (...args: any[]) => {
     // 兼容处理：判断第一个参数是 Token 对象还是原始字符串
     const isToken = typeof args[0] === 'object' && args[0] !== null;
@@ -275,7 +206,7 @@ export async function loadDoc(locale: Locale, slug: string) {
 export function getDocEntries() {
   const entries: { locale: Locale; slug: string }[] = [];
 
-  const docsRoot = getDocsRoot();
+  const docsRoot = DocRepository.getDocsRoot();
   function walk(dir: string) {
     const files = fs.readdirSync(dir);
     for (const file of files) {
@@ -295,7 +226,7 @@ export function getDocEntries() {
     }
   }
 
-  if (fs.existsSync(docsRoot)) walk(docsRoot);
+  if (DocRepository.exists(docsRoot)) walk(docsRoot);
   return entries;
 }
 
@@ -305,23 +236,16 @@ export function getDocEntries() {
 export async function scanDocs(locale: Locale): Promise<Group[]> {
   const entries = getDocEntries().filter((e) => e.locale === locale);
   const root: SidebarItem[] = [];
-  const docsRoot = getDocsRoot();
 
   for (const entry of entries) {
     const parts = entry.slug === '' ? [] : entry.slug.split('/');
-
-    // 运行时直接读取文件元数据以支持 SFTP 动态更新
-    const normalized = entry.slug === '' ? 'index' : entry.slug;
-    const possiblePaths = [
-      path.join(docsRoot, locale, `${normalized}.md`),
-      path.join(docsRoot, locale, normalized, 'index.md')
-    ];
-
-    let filePath = possiblePaths.find(p => fs.existsSync(p));
+    const filePath = DocRepository.resolvePath(locale, entry.slug);
+    
     if (!filePath) continue;
 
     const isIndexFile = filePath.endsWith('index.md');
-    const fileContent = fs.readFileSync(filePath, 'utf-8');
+    const normalized = entry.slug === '' ? 'index' : entry.slug;
+    const fileContent = DocRepository.readText(filePath);
     
     let metadata: any = {};
     try {
