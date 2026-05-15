@@ -66,44 +66,117 @@ curl -X POST \
    ```
 3. **Scope**: This operation will re-scan the document directories to update the sidebar (Sidebar) directory tree and rebuild the search index (Search Index).
 
-## Media Usage Guide
+## Markdown Extensions
 
-Biwa Press supports standard Markdown for images and a custom extended syntax for videos.
+Biwa Press provides a set of custom Markdown extensions to help you build rich documentation pages.
 
-### Images
-
-Use standard Markdown syntax. Place image files in the `static/` directory (e.g., `static/images/`).
-
+### 1. Button
+Render a link as a prominent styled button.
 ```markdown
-![Image Description](/images/your-image.jpg)
+:::button
+[Start Journey](/en/docs/guide/getting-started)
+:::
 ```
 
-### Videos
-
-Biwa Press supports enhanced video embedding, allowing control over dimensions, aspect ratio, posters, and lazy loading.
-
-#### Syntax
-`::typetitle{width=number}{ratio=width:height}{poster=path}{lazy}`
-
-#### 1. Local Video
+### 2. Card
+Create a container for content. Supports optional titles and internal links.
 ```markdown
-::video[Demo Video](/videos/1.mp4){width=300}{ratio=9:16}{poster=/videos/1.png}{lazy}
+:::card Project Goals [/en/docs/guide/getting-started]
+- Fast Rendering
+- Markdown First
+:::
+
+:::card No Title
+Plain card content.
+:::
 ```
 
-#### 2. YouTube
+### 3. Tabs
+Organize content into switchable tabs. Use `==` to define a new tab.
 ```markdown
-::youtube[Video Title](YouTube_Video_ID){width=600}{ratio=16:9}{lazy}
+:::tabs
+== Shell
+```bash
+npm run dev
+```
+== Package.json
+```json
+{ "name": "biwa-press" }
+```
+:::
 ```
 
-#### 3. Bilibili
+### 4. Gallery (Grid Layout)
+Render images or cards in a responsive grid (usually 3 columns on desktop).
 ```markdown
-::bilibili[Video Title](Bilibili_BV_ID){width=600}{ratio=16:9}{lazy}
+:::gallery
+- ![Image 1](/images/img1.jpg)
+- ![Image 2](/images/img2.jpg)
+
+:::card Nested Card
+You can even nest cards inside a gallery!
+:::
+:::
 ```
 
-#### Parameters
-- **Type**: `video` (local file), `youtube`, or `bilibili`.
-- **{width=...}**: (Optional) Max width in pixels.
-- **{ratio=...}**: (Optional) Aspect ratio (e.g., `16:9`, `9:16`, `4:3`).
-- **{poster=...}**: (Optional) Video poster image. Highly recommended for local videos to prevent white screens on iOS.
-- **{lazy}**: (Optional) Enables lazy loading. Videos start loading and play muted when scrolled into view.
+### 5. Timeline
+Display a vertical timeline of events.
+```markdown
+:::timeline
+- **2024/05/15**
+  - Biwa Press v0.1.0 released.
+- **2024/01/01**
+  - Project started.
+:::
+```
+
+### 6. Details (Collapse)
+A toggleable container using native HTML `<details>`.
+```markdown
+:::details View Code Snippet
+```typescript
+console.log("Hello Biwa!");
+```
+:::
+```
+
+### 7. GitHub Embed
+Quickly link to a GitHub repository or embed a Gist.
+```markdown
+::github[markedjs/marked]
+::github[gist:YOUR_GIST_ID]
+```
+
+### 8. Videos
+Enhanced video embedding with lazy loading and ratio control.
+
+**Syntax:** `::typetitle{width=...}{ratio=...}{poster=...}{lazy}`
+
+*   **Local:** `::videoDemo{width=300}{ratio=9:16}{poster=/videos/1.png}{lazy}`
+*   **YouTube:** `::youtubeTitle{ratio=16:9}{lazy}`
+*   **Bilibili:** `::bilibiliTitle{ratio=16:9}{lazy}`
+
+**Attributes:**
+*   `{width=...}`: Max width in pixels.
+*   `{ratio=...}`: Aspect ratio (e.g., `16:9`).
+*   `{poster=...}`: Thumbnail image (recommended for local videos).
+*   `{lazy}`: Load and autoplay (muted) only when visible.
+
+### 9. Images & Lightbox
+Standard Markdown images are automatically supported with a built-in "Lightbox" feature. Click any image to view it in full-screen overlay.
+
+```markdown
+![Description](/images/photo.jpg)
+```
+
+### 10. Mermaid Diagrams
+Render charts and diagrams using Mermaid.js.
+
+```mermaid
+graph TD;
+    A-->B;
+    A-->C;
+    B-->D;
+    C-->D;
+```
 ```

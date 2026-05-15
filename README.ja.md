@@ -66,44 +66,117 @@ curl -X POST \
    ```
 3. **適用範囲**：この操作により、サイドバーのディレクトリツリーが再スキャンされ、検索インデックスが再構築されます。
 
-## メディア使用ガイド
+## Markdown 拡張
 
-Biwa Press は、画像の標準 Markdown 構文と、ビデオのカスタム拡張構文をサポートしています。
+Biwa Press は、リッチなドキュメントページを構築するためのカスタム Markdown 拡張機能を提供しています。
 
-### 画像 (Images)
-
-標準の Markdown 構文を使用します。画像ファイルは `static/` ディレクトリ（例：`static/images/`）に配置してください。
-
+### 1. ボタン (Button)
+リンクを強調されたスタイルのボタンとしてレンダリングします。
 ```markdown
-![画像の説明](/images/your-image.jpg)
+:::button
+[旅を始める](/ja/docs/guide/getting-started)
+:::
 ```
 
-### ビデオ (Videos)
-
-Biwa Press は、サイズ、アスペクト比、ポスター画像、遅延読み込みを制御できる拡張ビデオ埋め込み構文をサポートしています。
-
-#### 構文
-`::タイプタイトル{width=幅}{ratio=比率}{poster=ポスターのパス}{lazy}`
-
-#### 1. ローカルビデオ
+### 2. カード (Card)
+コンテンツのコンテナを作成します。オプションのタイトルや内部リンクをサポートしています。
 ```markdown
-::video[デモビデオ](/videos/1.mp4){width=300}{ratio=9:16}{poster=/videos/1.png}{lazy}
+:::card プロジェクトの目標 [/ja/docs/guide/getting-started]
+- 高速なレンダリング
+- Markdown 優先
+:::
+
+:::card タイトルなし
+シンプルなカードコンテンツ。
+:::
 ```
 
-#### 2. YouTube ビデオ
+### 3. タブ (Tabs)
+コンテンツを切替可能なタブに整理します。`==` を使用して新しいタブを定義します。
 ```markdown
-::youtube[ビデオタイトル](YouTube_Video_ID){width=600}{ratio=16:9}{lazy}
+:::tabs
+== Shell
+```bash
+npm run dev
+```
+== Package.json
+```json
+{ "name": "biwa-press" }
+```
+:::
 ```
 
-#### 3. Bilibili ビデオ
+### 4. ギャラリー (Gallery - グリッドレイアウト)
+画像やカードをレスポンシブなグリッド（デスクトップでは通常 3 列）で表示します。
 ```markdown
-::bilibili[ビデオタイトル](Bilibili_BV_ID){width=600}{ratio=16:9}{lazy}
+:::gallery
+- ![画像 1](/images/img1.jpg)
+- ![画像 2](/images/img2.jpg)
+
+:::card 嵌套カード
+ギャラリーの中にカードを入れ子にすることも可能です！
+:::
+:::
 ```
 
-#### パラメータ詳細
-- **タイプ**: `video` (ローカルファイル), `youtube`, `bilibili` から選択。
-- **{width=...}**: (オプション) ビデオの最大幅をピクセル単位で設定します。
-- **{ratio=...}**: (オプション) アスペクト比を設定します（例：`16:9`, `9:16`, `4:3`）。
-- **{poster=...}**: (オプション) ビデオのポスター画像を設定します。iOSデバイスでの白屏問題を解決するため、ローカルビデオには設定を強く推奨します。
-- **{lazy}**: (オプション) 遅延読み込みモードを有効にします。ビデオがビューポートに入ると読み込みを開始し、ミュート状態で自動再生されます。
+### 5. タイムライン (Timeline)
+垂直方向のイベントタイムラインを表示します。
+```markdown
+:::timeline
+- **2024/05/15**
+  - Biwa Press v0.1.0 リリース。
+- **2024/01/01**
+  - プロジェクト開始。
+:::
+```
+
+### 6. 折りたたみ (Details)
+ネイティブの HTML `<details>` タグを使用した、切替可能なコンテナです。
+```markdown
+:::details コードスニペットを表示
+```typescript
+console.log("Hello Biwa!");
+```
+:::
+```
+
+### 7. GitHub 埋め込み (GitHub Embed)
+GitHub リポジトリへのクイックリンクや Gist の埋め込み。
+```markdown
+::github[markedjs/marked]
+::github[gist:YOUR_GIST_ID]
+```
+
+### 8. ビデオ (Videos)
+遅延読み込みとアスペクト比制御を備えた拡張ビデオ埋め込み。
+
+**構文:** `::タイプタイトル{width=...}{ratio=...}{poster=...}{lazy}`
+
+*   **ローカル:** `::videoデモビデオ{width=300}{ratio=9:16}{poster=/videos/1.png}{lazy}`
+*   **YouTube:** `::youtubeビデオタイトル{ratio=16:9}{lazy}`
+*   **Bilibili:** `::bilibiliビデオタイトル{ratio=16:9}{lazy}`
+
+**属性:**
+*   `{width=...}`: 最大幅（ピクセル）。
+*   `{ratio=...}`: アスペクト比（例：`16:9`）。
+*   `{poster=...}`: サムネイル画像（ローカルビデオに推奨）。
+*   `{lazy}`: 表示された時のみ読み込みと（ミュート状態での）自動再生を行います。
+
+### 9. 画像とライトボックス (Images & Lightbox)
+標準の Markdown 画像は、内蔵の「ライトボックス」機能を自動的にサポートします。画像をクリックするとフルスクリーンオーバーレイで表示されます。
+
+```markdown
+![説明](/images/photo.jpg)
+```
+
+### 10. Mermaid ダイアグラム (Mermaid Diagrams)
+Mermaid.js を使用してチャートや図をレンダリングします。
+
+```mermaid
+graph TD;
+    A-->B;
+    A-->C;
+    B-->D;
+    C-->D;
+```
 ```

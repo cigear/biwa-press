@@ -66,45 +66,117 @@ curl -X POST \
    ```
 3. **生效范围**：此操作将重新扫描文档目录以更新侧边栏（Sidebar）目录树，并重新构建搜索索引（Search Index）。
 
-# Biwa Press 媒体使用指南
+## Markdown 扩展
 
-本项目支持在 Markdown 中通过标准语法或自定义扩展语法来使用图片和视频。
+Biwa Press 提供了一系列自定义 Markdown 扩展，帮助你构建丰富的文档页面。
 
-## 图片 (Images)
+### 1. 按钮 (Button)
+将链接渲染为突出样式的按钮。
+```markdown
+:::button
+[开始旅程](/zh/docs/guide/getting-started)
+:::
+```
 
-使用标准 Markdown 语法。请将图片文件放置在 `static/` 目录下（例如 `static/images/`）。
+### 2. 卡片 (Card)
+创建内容容器。支持可选标题和内部链接。
+```markdown
+:::card 项目目标 [/zh/docs/guide/getting-started]
+- 快速渲染
+- Markdown 优先
+:::
+
+:::card 无标题
+纯卡片内容。
+:::
+```
+
+### 3. 标签页 (Tabs)
+将内容组织成可切换的标签页。使用 `==` 定义新标签页。
+```markdown
+:::tabs
+== Shell
+```bash
+npm run dev
+```
+== Package.json
+```json
+{ "name": "biwa-press" }
+```
+:::
+```
+
+### 4. 画廊 (Gallery - 网格布局)
+以响应式网格（桌面端通常为 3 列）渲染图片或卡片。
+```markdown
+:::gallery
+- ![图片 1](/images/img1.jpg)
+- ![图片 2](/images/img2.jpg)
+
+:::card 嵌套卡片
+你甚至可以在画廊中嵌套卡片！
+:::
+:::
+```
+
+### 5. 时间线 (Timeline)
+显示垂直事件时间线。
+```markdown
+:::timeline
+- **2024/05/15**
+  - Biwa Press v0.1.0 发布。
+- **2024/01/01**
+  - 项目启动。
+:::
+```
+
+### 6. 详情 (Details - 折叠)
+使用原生 HTML `<details>` 标签的可切换容器。
+```markdown
+:::details 查看代码片段
+```typescript
+console.log("Hello Biwa!");
+```
+:::
+```
+
+### 7. GitHub 嵌入 (GitHub Embed)
+快速链接到 GitHub 仓库或嵌入 Gist。
+```markdown
+::github[markedjs/marked]
+::github[gist:YOUR_GIST_ID]
+```
+
+### 8. 视频 (Videos)
+增强的视频嵌入功能，支持懒加载和比例控制。
+
+**语法:** `::类型标题{width=...}{ratio=...}{poster=...}{lazy}`
+
+*   **本地视频:** `::video演示视频{width=300}{ratio=9:16}{poster=/videos/1.png}{lazy}`
+*   **YouTube:** `::youtube视频标题{ratio=16:9}{lazy}`
+*   **Bilibili:** `::bilibili视频标题{ratio=16:9}{lazy}`
+
+**属性:**
+*   `{width=...}`: 最大宽度（像素）。
+*   `{ratio=...}`: 宽高比（例如 `16:9`）。
+*   `{poster=...}`: 封面图（强烈建议本地视频使用）。
+*   `{lazy}`: 仅在可见时加载并自动静音播放。
+
+### 9. 图片与灯箱 (Images & Lightbox)
+标准 Markdown 图片自动支持内置的“灯箱”功能。点击任意图片可在全屏叠加层中查看。
 
 ```markdown
-![图片描述](/images/your-image.jpg)
+![描述](/images/photo.jpg)
 ```
 
-## 视频 (Videos)
+### 10. Mermaid 图表 (Mermaid Diagrams)
+使用 Mermaid.js 渲染图表。
 
-Biwa Press 支持增强的视频嵌入语法，允许你控制尺寸、比例、封面图以及开启懒加载。
-
-### 语法格式
-`::类型标题{width=宽度}{ratio=比例}{poster=封面路径}{lazy}`
-
-### 1. 本地视频
-```markdown
-::video[演示视频](/videos/1.mp4){width=300}{ratio=9:16}{poster=/videos/1.png}{lazy}
+```mermaid
+graph TD;
+    A-->B;
+    A-->C;
+    B-->D;
+    C-->D;
 ```
-
-### 2. YouTube 视频
-```markdown
-::youtube[视频标题](YouTube_Video_ID){width=600}{ratio=16:9}{lazy}
 ```
-
-### 3. Bilibili 视频
-```markdown
-::bilibili[视频标题](Bilibili_BV_ID){width=600}{ratio=16:9}{lazy}
-```
-
-### 参数详细说明
-- **类型**: 可选值为 `video` (本地文件), `youtube`, `bilibili`。
-- **{width=...}**: (可选) 设置视频的最大宽度（单位：像素）。
-- **{ratio=...}**: (可选) 设置宽高比，支持 `16:9`、`9:16`、`4:3` 等格式。
-- **{poster=...}**: (可选) 设置视频封面。强烈建议为本地视频设置封面，以解决 iOS 设备上的首帧白屏问题。
-- **{lazy}**: (可选) 开启懒加载模式。视频将在滚动到页面可见区域时才开始加载并自动静音播放。
-```
-
