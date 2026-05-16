@@ -113,8 +113,32 @@ export async function loadDoc(locale: Locale, slug: string, raw = false) {
   }
   const highlighter = await highlighterPromise;
 
-  const slugger = new GithubSlugger();
+  // 1. 获取 Tokens 并从源头提取 TOC
+  const tokens = marked.lexer(content);
+  const tocSlugger = new GithubSlugger();
   const toc: { depth: number; text: string; slug: string }[] = [];
+
+  // 递归遍历 Tokens，但仅在根层级 (isRoot) 时记录到 TOC
+  const extractToc = (tokenList: any[], isRoot: boolean) => {
+    for (const token of tokenList) {
+      if (token.type === 'heading') {
+        // 使用 token.text 作为 slug 源（不含 # 符号）
+        const id = tocSlugger.slug(token.text);
+        if (isRoot) {
+          toc.push({
+            depth: token.depth,
+            text: token.text,
+            slug: id
+          });
+        }
+      }
+      // 如果 token 包含子 tokens（例如在 card, blockquote 内部），递归处理以保持 slugger 同步
+      if (token.tokens) extractToc(token.tokens, false);
+    }
+  };
+  extractToc(tokens, true);
+
+  const slugger = new GithubSlugger();
 
   // 配置自定义渲染器以生成标题 ID 并同步提取 TOC 数据
   const renderer = new Renderer() as Renderer & {
@@ -156,12 +180,13 @@ export async function loadDoc(locale: Locale, slug: string, raw = false) {
     const depth = isToken ? args[0].depth : args[1];
     const raw = isToken ? args[0].raw : args[2];
 
-    const id = slugger.slug(raw || text || '');
-    toc.push({
-      depth,
-      text: raw || text || '',
-      slug: id
-    });
+    // 为了保持与 TOC 提取逻辑（使用 token.text）一致，
+    // 我们在渲染阶段也应该使用未渲染的原始文本作为 ID 来源。
+    // Positional API: args[2] (即这里的 raw) 是原始文本。
+    // Token API: args[0].text (即这里的 text) 是原始文本。
+    const slugSource = isToken ? text : (raw || text || '');
+    const id = slugger.slug(slugSource);
+    
     return `<h${depth} id="${id}">${text}</h${depth}>\n`;
   };
 
