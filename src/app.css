@@ -225,17 +225,28 @@
 
 /* Gallery 九宫格样式 */
 .vp-gallery {
-  margin: 1.5rem 0;
+  margin: 1.5rem 0 !important;
+}
+
+@media (min-width: 768px) {
+  .vp-gallery {
+    margin: 2.5rem 0 !important;
+  }
 }
 
 .vp-gallery, 
 .vp-gallery ul {
   display: grid;
-  /* 移动端 2 列，桌面端 3 列（九宫格标准） */
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  /* 默认 3 列（仿朋友圈/Twitter 图片网格），间距较小 */
+  grid-template-columns: repeat(3, 1fr);
+  /* 核心修复：防止同一行格子高度被强制拉伸对齐（解决竖排/横排混排高度异常） */
+  align-items: start;
+  gap: 8px;
   list-style: none !important;
   padding: 0 !important;
+}
+
+.vp-gallery ul {
   margin: 0 !important;
 }
 
@@ -244,16 +255,25 @@
   display: block;
 }
 
+/* Special handling for complex components (Cards, Poetry) that need more horizontal space on mobile */
+.vp-gallery:has(.poetry-container, .vp-card),
+.vp-gallery ul:has(.poetry-container, .vp-card) {
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
 @media (min-width: 640px) {
-  .vp-gallery,
-  .vp-gallery ul {
-    grid-template-columns: repeat(3, 1fr);
+  .vp-gallery:has(.poetry-container, .vp-card),
+  .vp-gallery ul:has(.poetry-container, .vp-card) {
+    /* 改为自适应布局：每个格子最小 320px，有剩余空间则自动撑大 */
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   }
 }
 
+
 .vp-gallery li {
   margin: 0 !important;
-  aspect-ratio: 1 / 1; /* 强制正方形 */
+  aspect-ratio: 1 / 1;
   overflow: hidden;
   border-radius: 8px;
   background-color: #f4f4f5;
@@ -261,6 +281,16 @@
   display: flex;
   align-items: center; /* Vertically center the p element */
   justify-content: center; /* Horizontally center the p element */
+}
+
+/* 核心修复：当格子内是诗词或卡片时，取消正方形和裁剪限制，背景设为透明 */
+.vp-gallery li:has(.poetry-container),
+.vp-gallery li:has(.vp-card) {
+  aspect-ratio: auto;
+  height: auto;
+  overflow: visible;
+  background-color: transparent;
+  /* 移除 display: block 以恢复父级 flex 居中能力 */
 }
 
 .vp-gallery li p {
@@ -372,6 +402,11 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+}
+
+/* 移除画廊内诗词容器的默认外边距，改由网格 gap 控制 */
+.vp-gallery .poetry-container {
+   margin: 0 !important;
 }
 
 .vp-gallery .vp-card-content {

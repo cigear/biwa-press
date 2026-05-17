@@ -1,0 +1,89 @@
+# =========================================================================
+# 1. HTTP 虚拟主机：负责将所有 80 端口的流量，安全、永久地重定向到 HTTPS
+# =========================================================================
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    
+    server_name biwa.dev www.biwa.dev 160.16.124.228;
+
+    # 完美的 301 重定向，保留用户的原始请求路径和参数
+    return 301 https://biwa.dev$request_uri;
+}
+
+# =========================================================================
+# 2. HTTPS 虚拟主机：负责处理加密流量，并反向代理给 SvelteKit 后端
+# =========================================================================
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+
+    # 开启新版 HTTP/2 支持
+    http2 on;
+
+    server_name biwa.dev www.biwa.dev;
+
+    # ---------------------------------------------------------------------
+    # SSL 证书配置（如果你使用的是 Let's Encrypt / Certbot，路径通常如下）
+    # ---------------------------------------------------------------------
+    ssl_certificate /etc/letsencrypt/live/biwa.dev/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/biwa.dev/privkey.pem;
+
+    # 现代安全最佳实践配置（Mozilla Guideline v5.7, Modern/Intermediate）
+    ssl_session_timeout 1d;
+    ssl_session_cache shared:MozSSL:10m;  # 约 40000 个会话
+    ssl_session_tickets off;
+
+    # 加密协议与算法控制（杜绝残留的破损加密协议，如 SSLv3, TLSv1.0）
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
+
+    # 开启 HSTS（告诉浏览器未来一年内该域名只能通过 HTTPS 访问，完美配合 .dev）
+    add_header Strict-Transport-Security "max-age=63072000" always;
+
+    # ---------------------------------------------------------------------
+    # 反向代理核心路由：对接 SvelteKit (Node.js 进程)
+    # ---------------------------------------------------------------------
+    location / {
+        # 抛给本地活着的 SvelteKit 端口
+        proxy_pass http://127.0.0.1:3000;
+
+        # 允许 Webhook / WebSocket 和长连接正常升级握手
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+
+        # 精准透传客户端元数据，供 SvelteKit 内的 hooks.js 或 request 对象使用
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        
+        # 极为关键：告诉 SvelteKit 当前是 https 协议，防止 i18n/重定向时跌回 http
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # 缓存与超时控制（防止大文件上传或慢请求导致 504）
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # 1. 核心配置：指定图片和视频从根目录读取
+    # 访问 /images/xxx.jpg 时，Nginx 会去 /var/www/biwa-press/images/ 找
+    location ~ ^/(images|videos|audios)/ {
+        root /var/www/biwa-press;
+        try_files $uri =404;
+        expires 1y;
+        access_log off;
+    } 
+
+    # ---------------------------------------------------------------------
+    # 额外优化（可选）：针对 Admin 后台可能的大文件/Markdown图片上传限制
+    # ---------------------------------------------------------------------
+    client_max_body_size 50M;
+
+    # 错误日志与访问日志的独立归档（方便日后排查问题）
+    access_log /var/log/nginx/biwa-press.access.log;
+    error_log /var/log/nginx/biwa-press.error.log;
+}
+

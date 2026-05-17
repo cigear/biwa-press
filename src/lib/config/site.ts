@@ -1,5 +1,5 @@
 export const site = {
-  title: 'Biwa Press',
+  title: 'biwa.dev',
   description: 'A VitePress-like docs framework powered by SvelteKit.',
   url: 'https://biwa.dev',
   repo: 'https://github.com/cigear/biwa-press',

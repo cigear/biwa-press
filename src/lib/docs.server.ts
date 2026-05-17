@@ -19,12 +19,14 @@ import { collapseExtension } from '$lib/markdown/extensions/collapse';
 import { cardExtension } from '$lib/markdown/extensions/card';
 import { githubExtension } from '$lib/markdown/extensions/github';
 import { buttonExtension } from '$lib/markdown/extensions/button';
+import { audioExtension } from '$lib/markdown/extensions/audio';
+import { poetryExtension } from '$lib/markdown/extensions/poetry';
 
 let highlighterPromise: Promise<any> | null = null;
 
 // 注册 marked 扩展 (在服务器端全局注册一次即可)
 marked.use({
-  extensions: [videoEmbedExtension, timelineExtension, galleryExtension, tabsExtension, collapseExtension, cardExtension, githubExtension, buttonExtension]
+  extensions: [videoEmbedExtension, timelineExtension, galleryExtension, tabsExtension, collapseExtension, cardExtension, githubExtension, buttonExtension, audioExtension, poetryExtension]
 });
 
 /* ------------------------------------------------------------------

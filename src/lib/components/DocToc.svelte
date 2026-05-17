@@ -22,9 +22,9 @@
   let isClicking = false;
   let scrollTimeout: ReturnType<typeof setTimeout>;
 
-  const items = $derived(props.items ?? []);
-  const filtered = $derived(
-    items.filter((h: TocItem) => h.depth >= minDepth && h.depth <= maxDepth)
+  const items = $derived<TocItem[]>(props.items ?? []);
+  const filtered = $derived<TocItem[]>(
+    items.filter((h) => h.depth >= minDepth && h.depth <= maxDepth)
   );
 
   function handleClick(slug: string) {

@@ -180,3 +180,52 @@ graph TD;
     C-->D;
 ```
 ```
+
+## PM2 Deployment and Management for Production
+
+For production environments, this project recommends using [PM2](https://pm2.keymetrics.io/) for process management to ensure service stability and automatic startup after system reboot.
+
+### 1. Install PM2 Globally
+Run the following command on your VPS to install PM2:
+```bash
+sudo npm install pm2 -g
+```
+
+### 2. Common Management Commands
+Make sure to execute the following commands in the project root directory (the directory containing `ecosystem.config.js`).
+
+| Action | Command | Description |
+| :--- | :--- | :--- |
+| **Start Application** | `pm2 start ecosystem.config.cjs` | Start the application using the configuration file (first deployment) |
+| **Stop Application** | `pm2 stop <name\|id>` | Stop the process while keeping it in the PM2 process list |
+| **Restart Application** | `pm2 restart <name\|id>` | Forcefully terminate and restart the process |
+| **Graceful Reload** | `pm2 reload <name\|id>` | Zero-downtime reload (recommended for production updates) |
+| **Check Status** | `pm2 status` or `pm2 list` | View CPU usage, memory consumption, and process status |
+| **View Logs** | `pm2 logs <name\|id>` | View real-time logs (essential for debugging) |
+| **Delete Application** | `pm2 delete <name\|id>` | Stop and completely remove the application from PM2 |
+
+### 3. Persist Configuration (Auto Start on Boot)
+To ensure `biwa-press` automatically restarts after a VPS reboot, execute the following commands in order:
+
+1. **Save Current Process List**
+```bash
+pm2 save
+```
+
+2. **Enable Startup Script**
+```bash
+pm2 startup
+```
+
+*After running this command, the terminal will output another command beginning with `sudo`. Copy and execute that command to complete the setup.*
+
+### 4. Updating Environment Variables
+If you modify environment variables such as `ORIGIN` or `PORT` in `ecosystem.config.js`, run the following command to apply the changes:
+```bash
+pm2 restart <name|id> --update-env
+```
+
+To verify that environment variables (such as `REVALIDATE_TOKEN`) have been loaded correctly, use:
+```bash
+pm2 env <id> | grep REVALIDATE_TOKEN
+```

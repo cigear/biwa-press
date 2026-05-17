@@ -180,3 +180,50 @@ graph TD;
     C-->D;
 ```
 ```
+
+## PM2 生产环境部署与管理
+
+本项目在生产环境下建议使用 [PM2](https://pm2.keymetrics.io/) 进行进程管理，以确保服务的稳定性和开机自启。
+
+### 1. 全局安装 PM2
+在 VPS 上执行以下命令进行安装：
+```bash
+sudo npm install pm2 -g
+```
+
+### 2. 常用管理命令
+请确保在项目根目录（包含 ecosystem.config.js 的目录）下执行以下操作：
+
+| 操作 | 命令 | 说明 |
+| :--- | :--- | :--- |
+| **启动应用** | `pm2 start ecosystem.config.cjs` | 根据配置文件启动应用（首次部署） |
+| **停止应用** | `pm2 stop <name|id>` | 停止运行，但保留在进程列表中 |
+| **重启应用** | `pm2 restart <name|id>` | 强制杀掉并重启进程 |
+| **平滑重载** | `pm2 reload <name|id>` | 零停机重载（推荐用于生产环境更新） |
+| **查看状态** | `pm2 status` 或 `pm2 list` | 查看应用 CPU、内存占用及运行状态 |
+| **查看日志** | `pm2 logs <name|id>` | 查看实时输出日志（排查错误必用） |
+| **删除应用** | `pm2 delete <name|id>` | 停止并从管理列表中彻底移除 |
+
+### 3. 持久化配置（开机自启）
+为了保证 VPS 重启后 biwa-press 能自动恢复运行，请依次执行：
+
+1. **保存状态**：将当前运行的进程列表保存。
+```bash
+pm2 save
+```
+2. **设置开机启动**：
+```bash
+pm2 startup
+```
+*执行此命令后，终端会返回一行以 `sudo` 开头的指令，请复制并执行该指令以完成配置。*
+
+### 4. 环境变量更新
+如果你修改了 ecosystem.config.js 中的 ORIGIN 或 PORT 等环境变量，需要执行以下命令生效：
+```bash
+pm2 restart <name|id> --update-env
+```
+
+要验证环境变量（如 `REVALIDATE_TOKEN`）是否已正确加载，请使用：
+```bash
+pm2 env <id> | grep REVALIDATE_TOKEN
+```

@@ -7,7 +7,13 @@ import type { Locale } from '$lib/config/locales';
  * 封装底层文件系统操作，解耦 fs 依赖
  * ------------------------------------------------------------------ */
 export const DocRepository = {
-  getDocsRoot: () => path.resolve(process.cwd(), 'docs'),
+  getDocsRoot: () => {
+    const docsPath = path.resolve(process.cwd(), 'docs');
+    if (!fs.existsSync(docsPath) && process.env.NODE_ENV === 'production') {
+      console.error(`[DocRepository] Docs root not found at: ${docsPath}`);
+    }
+    return docsPath;
+  },
   
   exists: (p: string) => fs.existsSync(p),
   

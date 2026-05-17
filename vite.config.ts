@@ -1,12 +1,25 @@
 import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
+import serveStatic from 'serve-static';
 
 export default defineConfig({
-  plugins: [tailwindcss(), sveltekit()],
+  plugins: [
+    tailwindcss(), 
+    sveltekit(),
+    {
+      name: 'serve-root-assets',
+      configureServer(server) {
+        // 开发环境下，让 Vite 服务项目根目录下的 images 和 videos 文件夹
+        server.middlewares.use('/images', serveStatic('./images'));
+        server.middlewares.use('/videos', serveStatic('./videos'));
+        server.middlewares.use('/audios', serveStatic('./audios'));
+      }
+    }
+  ],
   server: {
     fs: {
-      allow: ['.', './docs']
+      allow: ['.', './docs', './images', './videos', './audios']
     }
   },
   build: {

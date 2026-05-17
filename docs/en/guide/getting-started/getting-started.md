@@ -37,6 +37,8 @@ The static output is written to `build/`.
 ```
 ::video[演示视频](/videos/1.mp4){width=300}{ratio=9:16}{poster=/videos/1.png}{lazy}
 ```
+## Audio
+::audio[/audios/1.mp3]
 
 ## Timeline
 :::timeline
