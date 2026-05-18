@@ -108,7 +108,8 @@
         }
       };
 
-      pre.appendChild(btn);
+      // 将按钮插入到 pre 的最前面，配合 Grid 布局实现右上角悬浮
+      pre.prepend(btn);
     });
   });
 

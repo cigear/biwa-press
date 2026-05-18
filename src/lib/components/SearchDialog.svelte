@@ -12,10 +12,21 @@
   let { locale, onSelect }: { locale: Locale; onSelect?: () => void } = $props();
   const text = $derived(getLocaleConfig(locale));
 
+  // 辅助函数：如果标题看起来像 slug (含横杠且无空格)，则进行美化处理
+  function formatTitle(title: string) {
+    if (!title) return '';
+    // 如果标题包含中文字符，或者已经包含空格，或者不包含横杠，说明它已经是处理过的标题
+    const hasChinese = /[\u4e00-\u9fa5]/.test(title);
+    if (hasChinese || title.includes(' ') || !title.includes('-')) return title;
+    
+    return title.replace(/-/g, ' ')
+                .replace(/\b\w/g, (l) => l.toUpperCase());
+  }
+
   // 使用 $effect 处理异步搜索和防抖
   $effect(() => {
     const q = query.trim();
-    if (q.length < 2) {
+    if (q.length < 1) {
       results = [];
       return;
     }
@@ -82,7 +93,7 @@
                 onSelect?.();
               }}
             >
-              <span class="block text-sm font-medium text-zinc-950">{result.title}</span>
+              <span class="block text-sm font-medium text-zinc-950">{formatTitle(result.title)}</span>
               {#if result.description}
                 <span class="mt-1 block text-sm text-zinc-500">{result.description}</span>
               {/if}

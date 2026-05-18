@@ -21,12 +21,22 @@ import { githubExtension } from '$lib/markdown/extensions/github';
 import { buttonExtension } from '$lib/markdown/extensions/button';
 import { audioExtension } from '$lib/markdown/extensions/audio';
 import { poetryExtension } from '$lib/markdown/extensions/poetry';
+import { headlineExtension } from '$lib/markdown/extensions/headline';
 
 let highlighterPromise: Promise<any> | null = null;
 
 // 注册 marked 扩展 (在服务器端全局注册一次即可)
 marked.use({
-  extensions: [videoEmbedExtension, timelineExtension, galleryExtension, tabsExtension, collapseExtension, cardExtension, githubExtension, buttonExtension, audioExtension, poetryExtension]
+  extensions: [videoEmbedExtension, timelineExtension, galleryExtension, tabsExtension, collapseExtension, cardExtension, githubExtension, buttonExtension, audioExtension, poetryExtension, headlineExtension]
+});
+
+/** 自定义 Shiki 转换器：为带有 showLineNumbers 的代码块添加 has-line-numbers 类名 */
+const transformerLineNumbers = () => ({
+  name: 'line-numbers',
+  pre(node: any) {
+    // Directly manipulate the class property to bypass 'this' binding issues
+    node.properties.class = [node.properties.class, 'has-line-numbers'].filter(Boolean).join(' ');
+  }
 });
 
 /* ------------------------------------------------------------------
@@ -73,7 +83,12 @@ export async function loadDoc(locale: Locale, slug: string, raw = false) {
     throw redirect(307, `/${locale}/`);
   }
 
-  const fileContent = DocRepository.readText(filePath);
+  // 1. 预处理内容：移除 UTF-8 BOM 并修剪空白，确保解析器绝对稳定
+  let fileContent = DocRepository.readText(filePath);
+  if (fileContent.charCodeAt(0) === 0xFEFF) {
+    fileContent = fileContent.slice(1);
+  }
+  fileContent = fileContent.trim();
   
   let data: any = {};
   let content = fileContent;
@@ -82,6 +97,16 @@ export async function loadDoc(locale: Locale, slug: string, raw = false) {
     const parsed = matter(fileContent);
     data = parsed.data;
     content = parsed.content;
+
+    // 健壮性补丁：如果 gray-matter 解析失败但明显有 Frontmatter 结构，手动提取 title
+    if (Object.keys(data).length === 0 && fileContent.startsWith('---')) {
+      const nextDash = fileContent.indexOf('---', 3);
+      if (nextDash !== -1) {
+        const yamlFragment = fileContent.slice(3, nextDash);
+        const titleMatch = yamlFragment.match(/title:\s*(.*)/);
+        if (titleMatch) data.title = titleMatch[1].replace(/['"]/g, '').trim();
+      }
+    }
 
     if (filePath.endsWith('index.md') && !raw) {
       // 根据要求：index.md 本身不显示内容。
@@ -204,24 +229,37 @@ export async function loadDoc(locale: Locale, slug: string, raw = false) {
     }
 
     const [language, ...rest] = (lang || '').split(/\s+/);
+    const showLineNumbers = rest.includes('showLineNumbers');
+
     return highlighter.codeToHtml(text || '', {
       lang: language || 'text',
       theme: 'github-dark',
       meta: { __raw: rest.join(' ') },
-      transformers: [transformerMetaHighlight()]
+      transformers: [
+        transformerMetaHighlight(),
+        ...(showLineNumbers ? [transformerLineNumbers()] : [])
+      ]
     });
   };
 
   // 将 Markdown 转换为 HTML，并注册自定义扩展
   const html = await marked.parse(content, { renderer });
 
+  // 严格优先级确定最终标题，与 search.ts 逻辑同步
+  const lastPart = slug.split('/').pop() || normalized;
+  const prettyFileName = lastPart.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+  const rawTitle = data.title;
+  const finalTitle = (rawTitle && typeof rawTitle === 'string' && rawTitle.trim().length > 0 && rawTitle !== 'undefined' && rawTitle !== 'null')
+    ? rawTitle.trim()
+    : prettyFileName;
+
   return {
     contentHtml: html,
     metadata: {
-      title: data.title || normalized,
       description: data.description || '',
       order: data.order ?? 999,
-      ...data
+      ...data,
+      title: finalTitle // 确保最终标题覆盖 data 中的空值或旧值
     } as DocMetadata,
     toc
   };
@@ -272,17 +310,30 @@ export async function scanDocs(locale: Locale): Promise<Group[]> {
 
     const isIndexFile = filePath.endsWith('index.md');
     const normalized = entry.slug === '' ? 'index' : entry.slug;
-    const fileContent = DocRepository.readText(filePath);
+    
+    // 同步：处理 BOM 和修剪空白
+    let fileContent = DocRepository.readText(filePath);
+    if (fileContent.charCodeAt(0) === 0xFEFF) {
+      fileContent = fileContent.slice(1);
+    }
+    fileContent = fileContent.trim();
     
     let metadata: any = {};
     try {
-      metadata = matter(fileContent).data;
+      const parsed = matter(fileContent);
+      metadata = parsed.data || {};
+
+      // 同步：侧边栏扫描也加入健壮性补丁
+      if (Object.keys(metadata).length === 0 && fileContent.startsWith('---')) {
+        const nextDash = fileContent.indexOf('---', 3);
+        if (nextDash !== -1) {
+          const yamlFragment = fileContent.slice(3, nextDash);
+          const titleMatch = yamlFragment.match(/title:\s*(.*)/);
+          if (titleMatch) metadata.title = titleMatch[1].replace(/['"]/g, '').trim();
+        }
+      }
     } catch (e: any) {
-      // 侧边栏扫描时静默跳过错误。
-      // 仅使用最后一部分路径作为回退标题，避免出现 "Parent/Child" 这种重复层级的标题
-      const lastPart = parts[parts.length - 1] || normalized;
-      metadata = { title: lastPart.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()) };
-      console.warn(`[Biwa Press] Malformed frontmatter in ${filePath}. Using derived title: "${metadata.title}".`);
+      metadata = {};
     }
 
     let currentLevel = root;
@@ -316,7 +367,11 @@ export async function scanDocs(locale: Locale): Promise<Group[]> {
         
         // 只有当 Frontmatter 中明确提供了 title 或 order 时才覆盖
         // 这确保了 index.md 和主文件可以互补元数据
-        if (metadata.title) node.title = metadata.title;
+        const mTitle = metadata.title;
+        if (mTitle && typeof mTitle === 'string' && mTitle.trim().length > 0 && mTitle !== 'undefined' && mTitle !== 'null') {
+          node.title = mTitle.trim();
+        }
+
         if (metadata.order !== undefined) node.order = metadata.order;
       } else {
         // 如果不是最后一层，继续向深层走

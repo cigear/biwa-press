@@ -3,11 +3,15 @@ title: Home
 description: Markdown to beautiful SvelteKit docs.
 ---
 
-:::poetry 静夜思|李白|v
-床前明月光
-疑是地上霜
-举头望明月
-低头思故乡
+:::poetry 山枇杷 |（唐） 白居易 |v
+深山老去惜年华
+况对东溪野枇杷
+火树风来翻绛焰
+琼枝日出晒红纱
+回看桃李都无色
+映得芙蓉不是花
+争奈结根深石底
+无因移得到人家
 :::
 
 Markdown to beautiful SvelteKit docs.
@@ -16,6 +20,10 @@ This starter gives you a VitePress-like foundation with SvelteKit routing, mdsve
 
 :::button
 [Start](/en/docs/guide/getting-started)
+:::
+
+:::headline 3
+唐诗
 :::
 
 :::poetry 静夜思|李白|v
@@ -50,6 +58,10 @@ This starter gives you a VitePress-like foundation with SvelteKit routing, mdsve
 望帝春心托杜鹃
 :::
 
+:::headline 3
+道
+:::
+
 :::poetry 道德经|老子|v
 道可道，非常道；名可名，非常名。
 无名天地之始，有名万物之母。
@@ -62,6 +74,19 @@ This starter gives you a VitePress-like foundation with SvelteKit routing, mdsve
 【第二章】天下皆知美之为美，斯恶（è）已；皆知善之为善，斯不善已。故有无相生，难易相成，长短相较，高下相倾，音声相和（hè），前后相随。是以圣人处无为之事，行不言之教，万物作焉而不辞，生而不有，为而不恃，功成而弗居。夫（fú）唯弗居，是以不去。
 :::
 
+:::headline 3
+宋词
+:::
+
+:::poetry 定风波·莫听穿林打叶声|宋 苏轼|h
+三月七日，沙湖道中遇雨，雨具先去，同行皆狼狈，余独不觉。已而遂晴，故作此(词)。
+莫听穿林打叶声，何妨吟啸且徐行。竹杖芒鞋轻胜马，谁怕？一蓑烟雨任平生。
+料峭春风吹酒醒，微冷，山头斜照却相迎。回首向来萧瑟处，归去，也无风雨也无晴。
+:::
+
+:::headline 3
+其它
+:::
 
 :::gallery
 :::poetry 静夜思|李白|v
@@ -70,7 +95,7 @@ This starter gives you a VitePress-like foundation with SvelteKit routing, mdsve
 举头望明月
 低头思故乡
 :::
-:::poetry 锦瑟|李商隐|h
+:::poetry 锦瑟|李商隐|v
 锦瑟无端五十弦
 一弦一柱思华年
 庄生晓梦迷蝴蝶
@@ -79,7 +104,7 @@ This starter gives you a VitePress-like foundation with SvelteKit routing, mdsve
 :::
 
 :::gallery
-:::poetry 锦瑟|李商隐|h
+:::poetry 锦瑟|李商隐|v
 锦瑟无端五十弦
 一弦一柱思华年
 庄生晓梦迷蝴蝶

@@ -3,8 +3,6 @@ title: 首页
 description: 用 Markdown 构建漂亮的 SvelteKit 文档。
 ---
 
-# biwa.dev
-
 :::poetry 山枇杷 |（唐） 白居易 |v
 深山老去惜年华
 况对东溪野枇杷
@@ -16,7 +14,6 @@ description: 用 Markdown 构建漂亮的 SvelteKit 文档。
 无因移得到人家
 :::
 
-
 用 Markdown 构建漂亮的 SvelteKit 文档。
 
 这个起始工程提供了类似 VitePress 的基础能力：SvelteKit 路由、mdsvex 内容、Tailwind CSS 4 样式、Bits UI 组件和静态输出。
@@ -26,6 +23,9 @@ description: 用 Markdown 构建漂亮的 SvelteKit 文档。
 [开始](/zh/docs/guide/getting-started)
 :::
 
+:::headline 3
+唐诗
+:::
 
 :::poetry 静夜思|李白|v
 床前明月光
@@ -41,6 +41,10 @@ description: 用 Markdown 构建漂亮的 SvelteKit 文档。
 望帝春心托杜鹃
 :::
 
+:::headline 3
+道
+:::
+
 :::poetry 道德经|老子|v
 道可道，非常道；名可名，非常名。
 无名天地之始，有名万物之母。
@@ -53,6 +57,20 @@ description: 用 Markdown 构建漂亮的 SvelteKit 文档。
 【第二章】天下皆知美之为美，斯恶（è）已；皆知善之为善，斯不善已。故有无相生，难易相成，长短相较，高下相倾，音声相和（hè），前后相随。是以圣人处无为之事，行不言之教，万物作焉而不辞，生而不有，为而不恃，功成而弗居。夫（fú）唯弗居，是以不去。
 :::
 
+:::headline 3
+宋词
+:::
+
+:::poetry 定风波·莫听穿林打叶声|宋 苏轼|h
+三月七日，沙湖道中遇雨，雨具先去，同行皆狼狈，余独不觉。已而遂晴，故作此(词)。
+莫听穿林打叶声，何妨吟啸且徐行。竹杖芒鞋轻胜马，谁怕？一蓑烟雨任平生。
+料峭春风吹酒醒，微冷，山头斜照却相迎。回首向来萧瑟处，归去，也无风雨也无晴。
+:::
+
+
+:::headline 3
+其它
+:::
 
 :::gallery
 :::poetry 静夜思|李白|v

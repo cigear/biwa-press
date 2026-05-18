@@ -12,5 +12,5 @@ export const GET: RequestHandler = async ({ params }) => {
     return json({ error: 'Invalid locale' }, { status: 400 });
   }
 
-  return json(getFullIndex(lang as Locale));
+  return json(await getFullIndex(lang as Locale));
 };

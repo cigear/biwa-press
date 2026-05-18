@@ -10,7 +10,7 @@ export const GET: RequestHandler = async ({ url }) => {
     return json({ error: 'Missing or invalid locale' }, { status: 400 });
   }
 
-  const results = searchDocs(lang as Locale, query);
+  const results = await searchDocs(lang as Locale, query);
 
   return json(results);
 };

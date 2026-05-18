@@ -71,7 +71,24 @@
 
   html:lang(ja) {
     /* 日文系统字体栈：Hiragino Sans (Mac), Yu Gothic (Win), Meiryo (Win) */
-    font-family: "Inter", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", "Noto Sans CJK JP", "Source Han Sans JP", sans-serif;
+    font-family:
+      /* Latin characters first, will be skipped by CJK glyphs */
+      "Inter",
+      /* Cross-platform CJK fallback, often looks good */
+      "Noto Sans CJK JP",
+      "Source Han Sans JP",
+      /* macOS/iOS system fonts */
+      "Hiragino Sans",
+      "Hiragino Kaku Gothic ProN",
+      /* Windows system fonts */
+      "Yu Gothic Medium",
+      "Yu Gothic",
+      "Meiryo",
+      /* Generic fallback */
+      sans-serif;
+    
+    /* 建议：针对日文开启字间距优化 */
+    font-feature-settings: "palt"; 
   }
 
   /* 建议为按钮类链接显式增加 display，确保 padding 正常渲染 */
@@ -97,13 +114,30 @@
 
   /* 代码块复制按钮样式 */
   .doc-content pre {
+    display: grid !important;
+    /* 强制列宽不随内容撑开，这是防止 pre 本身产生滚动条的关键 */
+    grid-template-columns: minmax(0, 1fr);
     position: relative;
+    /* 核心：禁止 pre 自身滚动 */
+    overflow-x: visible !important;
+  }
+
+  .doc-content pre > code {
+    grid-area: 1 / 1;
+    display: block;
+    /* 滚动条现在由 code 标签产生 */
+    overflow-x: auto;
   }
 
   .doc-content .copy-btn {
-    position: absolute;
+    grid-area: 1 / 1;
+    position: sticky;
     top: 0.75rem;
     right: 0.75rem;
+    /* 强制置于右上角，解决短代码时的居中问题 */
+    justify-self: end;
+    align-self: start;
+    margin: 0 !important;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -115,11 +149,28 @@
     cursor: pointer;
     opacity: 0;
     transition: all 0.2s;
-    z-index: 10;
+    z-index: 20;
   }
 
   .doc-content pre:hover .copy-btn {
     opacity: 1; /* 鼠标悬停时显示 */
+  }
+
+  /* Shiki 行号样式 */
+  .shiki.has-line-numbers code {
+    counter-reset: step;
+    counter-increment: step 0;
+  }
+
+  .shiki.has-line-numbers code .line::before {
+    content: counter(step);
+    counter-increment: step;
+    width: 1rem;
+    margin-right: 1.5rem;
+    display: inline-block;
+    text-align: right;
+    color: rgba(156, 163, 175, 0.7);
+    user-select: none;
   }
 
   .doc-content .copy-btn:hover {
@@ -384,9 +435,9 @@
 }
 
 .vp-gallery img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain; /* 改为 contain 确保看到图片全貌，不被裁剪 */
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* 中心铺满整个格子，类似 Twitter/微信朋友圈 */
   display: block;
   margin: 0 auto;
   transition: transform 0.3s ease;
