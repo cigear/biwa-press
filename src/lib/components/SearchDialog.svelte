@@ -9,7 +9,7 @@
   let results = $state<SearchEntry[]>([]);
   let isLoading = $state(false);
 
-  let { locale, onSelect }: { locale: Locale; onSelect?: () => void } = $props();
+  let { locale, onSelect, currentPath }: { locale: Locale; onSelect?: () => void; currentPath: string } = $props();
   const text = $derived(getLocaleConfig(locale));
 
   // 辅助函数：如果标题看起来像 slug (含横杠且无空格)，则进行美化处理

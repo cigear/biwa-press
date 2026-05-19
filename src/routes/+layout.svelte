@@ -12,8 +12,4 @@
   });
 </script>
 
-{#await waitLocale()}
-  <div class="fixed inset-0 bg-white"></div>
-{:then}
-  {@render children()}
-{/await}
+{@render children()}

@@ -1,11 +1,14 @@
 ---
 title: 首页
-description: 用 Markdown 构建漂亮的 SvelteKit 文档。
+description: 用 Markdown 构漂亮的 SvelteKit 文档。
+tags: ["SvelteKit", "Markdown", "tailwindcss"]
+image: "/images/covers/biwa-cover.png"
 ---
+
 
 :::poetry 山枇杷 |（唐） 白居易 |v
 深山老去惜年华
-况对东溪野枇杷
+况对东溪野枇
 火树风来翻绛焰
 琼枝日出晒红纱
 回看桃李都无色

@@ -15,13 +15,17 @@
     metadata, 
     children, 
     toc = [],
-    groups: initialGroups = []
+    groups: initialGroups = [],
+    currentPath, // 添加 currentPath 属性
+    slug // 添加 slug 属性
   }: { 
     locale: Locale; 
     metadata: Record<string, any>; 
     children: import('svelte').Snippet; 
     toc?: { depth: number; text: string; slug: string }[];
     groups?: Group[];
+    currentPath: string; // 类型定义
+    slug?: string; // 类型定义，可以是 undefined
   } = $props();
 
   // 关键：当 locale 属性改变时，同步更新 svelte-i18n 的全局状态
@@ -34,7 +38,7 @@
 
   // 计算文档的上一页和下一页导航
   const pagination = $derived.by(() => {
-    const currentPath = page.url.pathname;
+    // 使用传入的 currentPath 属性
     const flat: { title: string; href: string }[] = [];
 
     function flatten(items: Group[]) {
@@ -47,7 +51,7 @@
     }
 
     flatten(groups);
-    const index = flat.findIndex((i) => i.href === currentPath);
+    const index = flat.findIndex((i) => i.href === currentPath); // 使用传入的 currentPath
     return {
       prev: index > 0 ? flat[index - 1] : null,
       next: index !== -1 && index < flat.length - 1 ? flat[index + 1] : null
@@ -156,13 +160,13 @@
   });
 </script>
 
-<Header {locale} {groups} />
+<Header {locale} {groups} {currentPath} />
 
 <div class="mx-auto grid min-h-[calc(100vh-3.5rem)] max-w-7xl grid-cols-1 px-4 lg:grid-cols-[260px_1fr_200px] lg:gap-10">
-  <Sidebar {locale} sidebar={groups} />
+  <Sidebar {locale} sidebar={groups} {currentPath} />
 
   <div class="flex flex-col min-w-0">
-    <Breadcrumb {locale} {groups} />
+    <Breadcrumb {locale} {groups} {currentPath} />
 
     <main class="doc-content flex-1 pb-10 pt-4 lg:pb-12 lg:pt-6">
       {@render children()}

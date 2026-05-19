@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "vite dev --host",
     "build": "vite build",
-    "build:ssg": "cross-env BIWA_RENDER_MODE=ssg BIWA_OUT_DIR=build/ssg vite build",
-    "build:ssr": "cross-env BIWA_RENDER_MODE=ssr BIWA_OUT_DIR=build/ssr vite build",
-    "build:csr": "cross-env BIWA_RENDER_MODE=csr BIWA_OUT_DIR=build/csr vite build",
+    "build:ssg": "cross-env VITE_BIWA_RENDER_MODE=ssg BIWA_RENDER_MODE=ssg BIWA_OUT_DIR=build/ssg vite build",
+    "build:ssr": "cross-env VITE_BIWA_RENDER_MODE=ssr BIWA_RENDER_MODE=ssr BIWA_OUT_DIR=build/ssr vite build",
+    "build:csr": "cross-env VITE_BIWA_RENDER_MODE=csr BIWA_RENDER_MODE=csr BIWA_OUT_DIR=build/csr vite build",
     "package:ssg": "bash scripts/package-ssg.sh",
     "package:ssr": "bash scripts/package-ssr.sh",
     "package:csr": "bash scripts/package-csr.sh",

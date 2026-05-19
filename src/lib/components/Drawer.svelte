@@ -9,14 +9,16 @@
   let { 
     open = $bindable(false), 
     locale, 
-    groups 
+    groups,
+    currentPath // Add currentPath to props
   }: { 
     open: boolean; 
     locale: Locale; 
     groups: Group[]; 
+    currentPath: string; // Add type definition
   } = $props();
 
-  const currentPath = $derived(page.url.pathname);
+  // currentPath is now passed as a prop, no longer derived internally
 
   // 追踪侧边栏分组展开状态
   let expandedGroups = $state<Record<string, boolean>>({});
@@ -30,19 +32,19 @@
     const path = currentPath;
     if (groups.length === 0) return;
 
-    function checkActive(items: Group[]): boolean {
+    function checkActive(items: Group[], currentPath: string): boolean { // Add currentPath parameter
       let isActive = false;
       for (const item of items) {
         const href = item.slug ? `/${locale}/docs/${item.slug}` : undefined;
         if (href === path) isActive = true;
-        if (item.items && checkActive(item.items)) {
+        if (item.items && checkActive(item.items, currentPath)) { // Pass currentPath in recursive call
           expandedGroups[item.title] = true;
           isActive = true;
         }
       }
       return isActive;
     }
-    checkActive(groups);
+    checkActive(groups, currentPath); // Pass currentPath to initial call
   });
 </script>
 

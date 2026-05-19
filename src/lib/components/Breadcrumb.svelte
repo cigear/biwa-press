@@ -4,10 +4,9 @@
   import type { Group } from '$lib/docs';
   import { ChevronRight } from '@lucide/svelte';
 
-  let { locale, groups }: { locale: Locale, groups: Group[] } = $props();
+  let { locale, groups, currentPath }: { locale: Locale, groups: Group[], currentPath: string } = $props();
 
   const breadcrumbs = $derived.by(() => {
-    const currentPath = page.url.pathname;
     if (!currentPath.includes("/docs/")) return [];
 
     const list: { title: string; href?: string }[] = [];

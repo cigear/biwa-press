@@ -5,5 +5,6 @@ export const site = {
   repo: 'https://github.com/cigear/biwa-press',
   docsDir: 'docs',
   defaultLocale: 'en',
-  locales: ['en', 'zh', 'ja']
+  locales: ['en', 'zh', 'ja'],
+  twitterHandle: '@WangJun_2023', 
 };

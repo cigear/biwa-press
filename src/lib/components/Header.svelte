@@ -9,9 +9,11 @@
   import { page } from "$app/state"; // 使用 Svelte 5 的 state page 替代 store
   import { goto } from "$app/navigation"; // 导入导航函数
 
-  let { locale, groups: initialGroups = [] }: { locale: Locale, groups?: Group[] } = $props();
-
-  const currentPath = $derived(page.url.pathname); // 获取当前页面路径
+  let {
+    locale,
+    groups: initialGroups = [],
+    currentPath
+  }: { locale: Locale, groups?: Group[], currentPath: string } = $props();
 
   // 顶部导航（同步）
   const currentLocale = $derived(getLocaleConfig(locale));
@@ -121,7 +123,7 @@
         {/if}
       </div>
 
-      <SearchDialog {locale} onSelect={() => (open = false)} />
+      <SearchDialog {locale} {currentPath} onSelect={() => (open = false)} />
 
       <a
         href="https://github.com/cigear"
@@ -144,4 +146,4 @@
   </div>
 </header>
 
-<Drawer bind:open {locale} {groups} />
+<Drawer bind:open {locale} {groups} {currentPath} />

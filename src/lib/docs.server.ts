@@ -117,17 +117,19 @@ export async function loadDoc(locale: Locale, slug: string, raw = false) {
         .map(f => {
           const p = path.join(dir, f);
           const m = matter(DocRepository.readText(p));
-          return { content: m.content, order: m.data.order ?? 999 };
+          return { filename: f, order: m.data.order ?? 999 };
         })
         .sort((a, b) => a.order - b.order);
 
       if (siblings.length > 0) {
-        content = siblings[0].content;
-      } else {
         content = '';
+        const targetFilePath = path.join(dir, siblings[0].filename);
+        const targetSlug = getSlugFromAbsolutePath(targetFilePath, docsRoot);
+        throw redirect(307, `/${locale}/docs/${targetSlug}`);
       }
     }
   } catch (e: any) {
+    if (e.status && e.status >= 300 && e.status <= 308) throw e;
     console.warn(`[Biwa Press] Malformed frontmatter in ${filePath}. Error: ${e.message}`);
   }
   
@@ -256,10 +258,17 @@ export async function loadDoc(locale: Locale, slug: string, raw = false) {
   return {
     contentHtml: html,
     metadata: {
+      ...data,
       description: data.description || '',
       order: data.order ?? 999,
-      ...data,
-      title: finalTitle // 确保最终标题覆盖 data 中的空值或旧值
+      tags: (() => {
+        const t = data.tags ?? data.tag;
+        if (Array.isArray(t)) return t;
+        if (typeof t === 'string') return t.split(',').map((i: string) => i.trim());
+        return [];
+      })(),
+      title: finalTitle, // 确保最终标题覆盖 data 中的空值或旧值
+      slug: slug // 确保 slug 也被传递
     } as DocMetadata,
     toc
   };

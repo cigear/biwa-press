@@ -11,6 +11,7 @@ module.exports = {
         HOST: '127.0.0.1',
         ORIGIN: 'https://biwa.dev',
         BIWA_RENDER_MODE: 'ssr',
+        VITE_BIWA_RENDER_MODE: 'ssr',
         REVALIDATE_TOKEN: '123456789'
       }
     }

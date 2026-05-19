@@ -9,8 +9,9 @@
     items,
     locale,
     depth = 0,
-    expandedGroups: passedGroups
-  }: { items: Group[], locale: string, depth?: number, expandedGroups?: Record<string, boolean> } = $props();
+    expandedGroups: passedGroups,
+    currentPath // Add currentPath property
+  }: { items: Group[], locale: string, depth?: number, expandedGroups?: Record<string, boolean>, currentPath: string } = $props();
 
   // Initialize local state. In Svelte 5, $state() must be a top-level variable declaration.
   const internalState = $state<Record<string, boolean>>({});
@@ -18,8 +19,7 @@
   // 使用 $derived 来追踪 passedGroups 属性的变化，确保递归树共享状态
   const expandedGroups = $derived(passedGroups ?? internalState);
 
-  // 获取当前激活的路径，用于高亮显示
-  let currentPath = $derived(page.url.pathname);
+  // SidebarList directly uses the passed currentPath property for highlighting
 
   function handleGroupClick(item: Group) {
     // 直接修改原始状态对象（Proxy）
@@ -31,21 +31,20 @@
   $effect(() => {
     if (depth !== 0 || items.length === 0) return;
 
-    function checkActive(list: Group[]): boolean {
-      const path = page.url.pathname;
+    function checkActive(list: Group[], currentPath: string): boolean {
       const target = passedGroups ?? internalState;
       let isActive = false;
       for (const item of list) {
         const href = item.slug ? `/${locale}/docs/${item.slug}` : undefined;
-        if (href === path) isActive = true;
-        if (item.items && checkActive(item.items)) {
+        if (href === currentPath) isActive = true;
+        if (item.items && checkActive(item.items, currentPath)) {
           target[item.title] = true;
           isActive = true;
         }
       }
       return isActive;
     }
-    checkActive(items);
+    checkActive(items, currentPath);
   });
 </script>
 
@@ -93,7 +92,7 @@
 
       {#if hasChildren && expandedGroups[item.title]}
         <!-- 递归调用自身，且根据展开状态判断是否显示 -->
-        <SidebarList items={item.items ?? []} {locale} depth={depth + 1} expandedGroups={passedGroups ?? internalState} />
+        <SidebarList items={item.items ?? []} {locale} depth={depth + 1} expandedGroups={passedGroups ?? internalState} {currentPath} />
       {/if}
     </li>
   {/each}

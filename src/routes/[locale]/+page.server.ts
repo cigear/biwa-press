@@ -8,6 +8,7 @@ export const load: PageServerLoad = async ({ params }) => {
   const doc = await loadMarkdownFile(locale as any, 'index');
   
   return {
+    metadata: doc.metadata,
     contentHtml: doc.contentHtml
   };
 };

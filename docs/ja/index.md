@@ -1,6 +1,8 @@
 ---
 title: ホーム
 description: Markdown から美しい SvelteKit ドキュメントへ。
+tags: ["SvelteKit", "Markdown", "tailwindcss"]
+image: "/images/covers/biwa-cover.png"
 ---
 
 :::poetry 山枇杷 |（唐） 白居易 |v
