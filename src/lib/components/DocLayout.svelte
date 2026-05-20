@@ -223,11 +223,12 @@
                 >{$t("tags", { default: "Tags" })}:</span
               >
               {#each metadata.tags as tag}
-                <span
-                  class="inline-flex items-center rounded-md border border-zinc-200 bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-800"
+                <a
+                  href="/{locale}/tags/{tag}"
+                  class="inline-flex items-center rounded-md border border-zinc-200 bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-800 transition-colors hover:bg-zinc-200 hover:text-zinc-950"
                 >
                   {tag}
-                </span>
+                </a>
               {/each}
             </div>
           {/if}

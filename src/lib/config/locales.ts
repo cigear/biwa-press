@@ -20,7 +20,9 @@ export const locales = {
     languages: 'Languages',
     published: 'Published Date',
     updated: 'Updated Date',
-    tags: 'Tags'
+    tags: 'Tags',
+    toc: 'On this page',
+    articlesFound: '{count} {count, plural, one {article} other {articles}} found'
   },
   zh: {
     code: 'zh',
@@ -41,7 +43,9 @@ export const locales = {
     languages: '语言选择',
     published: '发布日期',
     updated: '最新修改日期',
-    tags: '标签'
+    tags: '标签',
+    toc: '目录',
+    articlesFound: '找到 {count} 篇文章'
   },
   ja: {
     code: 'ja',
@@ -62,7 +66,9 @@ export const locales = {
     languages: '言語',
     published: '投稿日',
     updated: '最新更新日',
-    tags: 'タグ'
+    tags: 'タグ',
+    toc: '目次',
+    articlesFound: '{count} 件の記事が見つかりました'
 
   }
 } as const;

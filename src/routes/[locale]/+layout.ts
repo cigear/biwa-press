@@ -1,6 +1,7 @@
 import { locale, waitLocale, dictionary } from 'svelte-i18n';
-import { locales } from '$lib/config/locales';
+import { locales, type Locale } from '$lib/config/locales';
 import type { LayoutLoad } from './$types';
+import type { Group } from '$lib/docs'; // 假设 Group 类型在这里定义或导入
 
 /**
  * 渲染模式控制 (SSG, SSR, CSR)
@@ -17,7 +18,15 @@ export const prerender = import.meta.env.VITE_BIWA_RENDER_MODE === 'ssg' || impo
 
 let i18nInitialized = false;
 
-export const load: LayoutLoad = async ({ data, params, url }) => {
+interface LayoutLoadOutput {
+  locale: Locale;
+  path: string;
+  // 添加其他可能来自 +layout.server.ts 的属性
+  sidebar?: Group[]; // 假设 sidebar 是在 layout.server.ts 中加载的
+  // 添加 layout load 函数可能返回的任何其他数据
+}
+
+export const load: LayoutLoad<LayoutLoadOutput> = async ({ data, params, url }) => {
   // 核心优化：直接设置全量字典，并使用守卫变量确保仅在应用启动时初始化一次
   if (!i18nInitialized) {
     dictionary.set(locales as any);
@@ -25,11 +34,12 @@ export const load: LayoutLoad = async ({ data, params, url }) => {
   }
 
   // 从 URL 参数 [locale] 中提取语言并同步给 svelte-i18n
-  const { locale: lang } = params;
+  const lang = params.locale as Locale;
   locale.set(lang);
   await waitLocale();
 
   // 🌟 核心修复：合并从 +layout.server.ts 传来的数据 (包含 sidebar)
   // 这样子页面才能通过 data.sidebar 获取到侧边栏数据
-  return { ...(data || {}), locale: lang, path: url.pathname };
+  const layoutData = (data || {}) as { sidebar?: Group[] }; // 将 data 转换为预期类型（如果存在）
+  return { ...layoutData, locale: lang, path: url.pathname };
 };

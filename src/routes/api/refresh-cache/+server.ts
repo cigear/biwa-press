@@ -1,5 +1,5 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { clearSidebarCache } from '$lib/docs.server';
+import { clearDocCache } from '$lib/docs.server';
 import { clearSearchCache } from '$lib/search';
 import { env } from '$env/dynamic/private';
 
@@ -17,7 +17,7 @@ export const POST: RequestHandler = async ({ request }) => {
     return json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  clearSidebarCache();
+  clearDocCache();
   clearSearchCache();
   
   return json({ message: 'Caches cleared successfully', timestamp: new Date().toISOString() });

@@ -9,6 +9,8 @@
 </script>
 
 <script lang="ts">
+  import { t } from "svelte-i18n";
+
   const props = $props<{
     items: TocItem[];
     minDepth: number;
@@ -172,7 +174,7 @@
 
 {#if filtered.length}
   <nav class="biwa-toc">
-    <div class="biwa-toc__title">On this page</div>
+    <div class="biwa-toc__title">{$t('toc', { default: 'On this page' })}</div>
 
     <ul class="biwa-toc__list">
       {#each filtered as item}

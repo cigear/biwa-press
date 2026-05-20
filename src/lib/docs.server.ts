@@ -418,10 +418,42 @@ export async function scanDocs(locale: Locale): Promise<Group[]> {
 
 /** 内存缓存，避免生产环境下频繁扫描磁盘 */
 let sidebarCache: Record<string, Group[]> = {};
+let flatDocsCache: Record<string, any[]> = {};
 
-/** 手动清空缓存，强制下次请求重新扫描 */
-export function clearSidebarCache() {
+/** 手动清空文档相关的缓存（包括侧边栏和用于标签页的扁平化文档列表） */
+export function clearDocCache() {
   sidebarCache = {};
+  flatDocsCache = {};
+}
+
+/**
+ * 获取指定语言下所有文档的扁平化列表（带元数据）
+ */
+export async function getFlatDocs(locale: Locale) {
+  if (!dev && flatDocsCache[locale]) return flatDocsCache[locale];
+
+  const entries = getDocEntries().filter((e) => e.locale === locale);
+  const docs = entries.map((entry) => {
+    const filePath = DocRepository.resolvePath(locale, entry.slug);
+    if (!filePath) return null;
+
+    let fileContent = DocRepository.readText(filePath);
+    if (fileContent.charCodeAt(0) === 0xfeff) fileContent = fileContent.slice(1);
+    
+    const { data } = matter(fileContent.trim());
+    
+    return {
+      slug: entry.slug,
+      title: data.title || entry.slug,
+      description: data.description || '',
+      published: data.published || '',
+      updated: data.updated || '',
+      tags: Array.isArray(data.tags) ? data.tags : (typeof data.tags === 'string' ? data.tags.split(',').map(t => t.trim()) : [])
+    };
+  }).filter(Boolean);
+
+  flatDocsCache[locale] = docs;
+  return docs;
 }
 
 /* ---------------------------------------------
