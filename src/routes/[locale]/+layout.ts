@@ -1,4 +1,5 @@
-import { locale, waitLocale } from 'svelte-i18n';
+import { locale, waitLocale, dictionary } from 'svelte-i18n';
+import { locales } from '$lib/config/locales';
 import type { LayoutLoad } from './$types';
 
 /**
@@ -14,7 +15,15 @@ import type { LayoutLoad } from './$types';
 export const ssr = import.meta.env.VITE_BIWA_RENDER_MODE !== 'csr';
 export const prerender = import.meta.env.VITE_BIWA_RENDER_MODE === 'ssg' || import.meta.env.VITE_BIWA_RENDER_MODE === undefined;
 
+let i18nInitialized = false;
+
 export const load: LayoutLoad = async ({ data, params, url }) => {
+  // 核心优化：直接设置全量字典，并使用守卫变量确保仅在应用启动时初始化一次
+  if (!i18nInitialized) {
+    dictionary.set(locales as any);
+    i18nInitialized = true;
+  }
+
   // 从 URL 参数 [locale] 中提取语言并同步给 svelte-i18n
   const { locale: lang } = params;
   locale.set(lang);

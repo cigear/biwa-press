@@ -71,9 +71,9 @@
             {item.title}
           </button>
         {:else}
-          <h3 class="py-1.5 px-2 -mx-2 text-sm font-bold text-zinc-600">
+          <div class="py-1.5 px-2 -mx-2 text-sm font-bold text-zinc-600">
             {item.title}
-          </h3>
+          </div>
         {/if}
 
         {#if hasChildren}

@@ -639,3 +639,42 @@
   color: #18181b;
   margin: 1rem 0 0.5rem;
 }
+
+/* 正文标题全局下划线样式 */
+.prose h1 {
+  border-bottom: 3px solid #ef4444;
+  padding-bottom: 0.3rem;
+  width: fit-content;
+}
+
+.prose h2 {
+  border-bottom: 3px solid #ef4444;
+  padding-bottom: 0.3rem;
+  width: fit-content;
+}
+
+.prose h3 {
+  border-bottom: 2px solid #ef4444;
+  padding-bottom: 0.2rem;
+  width: fit-content;
+}
+
+.prose h4 {
+  border-bottom: 2px solid #ef4444;
+  padding-bottom: 0.2rem;
+  width: fit-content;
+}
+
+
+.prose h5 {
+  border-bottom: 2px solid #ef4444;
+  padding-bottom: 0.2rem;
+  width: fit-content;
+}
+
+
+.prose h6 {
+  border-bottom: 2px solid #ef4444;
+  padding-bottom: 0.2rem;
+  width: fit-content;
+}

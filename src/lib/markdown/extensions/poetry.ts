@@ -46,7 +46,7 @@ export const poetryExtension: TokenizerAndRendererExtension = {
 
     return `
       <div class="${containerClass} ${layoutClass}" style="${writingMode}">
-        <h3 class="text-xl md:text-3xl font-bold m-0 tracking-tighter text-primary ${isVertical ? '' : 'text-center'}">${t.title}</h3>
+        <div class="text-xl md:text-3xl font-bold m-0 tracking-tighter text-primary ${isVertical ? '' : 'text-center'}">${t.title}</div>
         ${authorHtml}
         <div class="poetry-content flex flex-col ${isVertical ? 'gap-2 md:gap-5' : 'gap-4 md:gap-5'} text-lg md:text-2xl leading-tight tracking-[0.2em] md:tracking-[0.4em] ${isVertical ? '' : 'text-left'}">
           ${lines}
