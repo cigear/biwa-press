@@ -11,12 +11,12 @@ order: 2
 
 ### 【四行日记的基本规则与步骤】
 
-| 行数 | 项目 | 内容重点 |
+| <span class="whitespace-nowrap">行数</span> | <span class="whitespace-nowrap">项目</span> | 内容重点 |
 |----|----|:---|
-| 第1行 | 事实 | 如实写下今天发生的事情，以及自己实际采取的行动。 |
-| 第2行 | 发现 | 回顾这些事实后，写下自己的感受、发现或领悟。 |
-| 第3行 | 教训 | 将从“发现（觉察）”中获得的学习，整理成自己的原则或规则。 |
-| 第4行 | 宣言 | 面向未来的自己，写下目标或“想成为的样子”，并使用现在式或完成式表达。 |
+| <span class="whitespace-nowrap">第1行</span> | <span class="whitespace-nowrap">事实</span> | 如实写下今天发生的事情，以及自己实际采取的行动。 |
+| <span class="whitespace-nowrap">第2行</span> | <span class="whitespace-nowrap">发现</span> | 回顾这些事实后，写下自己的感受、发现或领悟。 |
+| <span class="whitespace-nowrap">第3行</span> | <span class="whitespace-nowrap">教训</span> | 将从“发现（觉察）”中获得的学习，整理成自己的原则或规则。 |
+| <span class="whitespace-nowrap">第4行</span> | <span class="whitespace-nowrap">宣言</span> | 面向未来的自己，写下目标或“想成为的样子”，并使用现在式或完成式表达。 |
 
 ---
 
