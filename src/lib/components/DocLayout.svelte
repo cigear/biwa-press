@@ -138,38 +138,62 @@
     // 依赖页面路径变化
     const path = page.url.pathname;
 
-    // 查找所有的 mermaid 代码块
-    // mdsvex 通常生成的结构是 pre.language-mermaid > code.language-mermaid
-    const mermaidBlocks = document.querySelectorAll(
-      "pre code.language-mermaid",
-    );
+    // 1. 针对旧版浏览器的特性检测 (Mermaid v11 需要 randomUUID)
+    const isSupported = window.crypto && typeof window.crypto.randomUUID === 'function';
+    if (!isSupported) {
+      console.warn('[Biwa Press] Detected legacy browser, keeping mermaid fallback.');
+      // 如果环境不支持，立即显示所有的 fallback 代码块
+      document.querySelectorAll('.mermaid-container .mermaid-fallback').forEach(el => {
+        el.classList.remove('hidden');
+      });
+      return;
+    }
 
-    if (mermaidBlocks.length > 0) {
+    // 查找由 mermaidExtension 生成的容器
+    const containers = document.querySelectorAll('.mermaid-container');
+
+    if (containers.length > 0) {
       import("mermaid").then((m) => {
         const mermaid = m.default || m;
         if (!mermaidInitialized) {
           mermaid.initialize({
             startOnLoad: false,
-            theme: "default",
+            theme: "default", // 改为默认主题，生成黑线黑字
             fontFamily: "var(--font-base)",
             securityLevel: "loose",
           });
           mermaidInitialized = true;
         }
 
-        mermaidBlocks.forEach((block) => {
-          const pre = block.parentElement;
-          if (pre) {
-            pre.classList.add("mermaid");
-            // 将原始代码内容提取到 pre 标签中，这是 mermaid.run 期待的结构
-            pre.textContent = block.textContent;
-            // 移除复原按钮（如果有）
-            pre.querySelector(".copy-btn")?.remove();
+        containers.forEach(async (container) => {
+          const target = container.querySelector('.mermaid-render-target') as HTMLElement;
+          const fallback = container.querySelector('.mermaid-fallback') as HTMLElement;
+          const src = container.getAttribute('data-mermaid-src');
+
+          if (target && fallback && src) {
+            try {
+              const code = decodeURIComponent(src);
+              const id = 'mermaid-' + Math.random().toString(36).slice(2, 9);
+              
+              // 执行手动渲染
+              const { svg } = await mermaid.render(id, code);
+              target.innerHTML = svg;
+              
+              // 渲染成功后，隐藏 fallback，显示图形
+              target.classList.remove('hidden');
+              fallback.classList.add('hidden');
+            } catch (err) {
+              console.error('Mermaid individual render failed:', err);
+              // 单个渲染失败时，显示 fallback
+              fallback.classList.remove('hidden');
+            }
           }
         });
-
-        mermaid.run({
-          querySelector: ".mermaid",
+      }).catch(err => {
+        console.error('Failed to load mermaid library:', err);
+        // 库加载失败时，显示所有 fallback
+        document.querySelectorAll('.mermaid-container .mermaid-fallback').forEach(el => {
+          el.classList.remove('hidden');
         });
       });
     }

@@ -2,6 +2,9 @@ import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 import serveStatic from 'serve-static';
+import fs from 'node:fs';
+import path from 'node:path';
+import process from 'node:process';
 
 export default defineConfig({
   plugins: [
@@ -9,11 +12,31 @@ export default defineConfig({
     sveltekit(),
     {
       name: 'serve-root-assets',
+      // 开发和构建启动钩子
+      buildStart() {
+        const assets = ['images', 'videos', 'audios'];
+        // 确保 static 目录存在
+        if (!fs.existsSync('static')) {
+          fs.mkdirSync('static', { recursive: true });
+        }
+
+        for (const asset of assets) {
+          const srcPath = path.resolve(asset);
+          const destPath = path.resolve('static', asset);
+          
+          // 如果根目录存在该文件夹，且 static 下还没有建立链接
+          if (fs.existsSync(srcPath) && !fs.existsSync(destPath)) {
+            // 在 Windows 上使用 'junction' 类型创建目录链接，无需管理员权限
+            const type = process.platform === 'win32' ? 'junction' : 'dir';
+            fs.symlinkSync(srcPath, destPath, type);
+            console.log(`[Biwa Press] Linked ${srcPath} to ${destPath}`);
+          }
+        }
+      },
       configureServer(server) {
-        // 开发环境下，让 Vite 服务项目根目录下的 images 和 videos 文件夹
-        server.middlewares.use('/images', serveStatic('./images'));
-        server.middlewares.use('/videos', serveStatic('./videos'));
-        server.middlewares.use('/audios', serveStatic('./audios'));
+        ['images', 'videos', 'audios'].forEach(dir => {
+          server.middlewares.use(`/${dir}`, serveStatic(`./${dir}`));
+        });
       }
     }
   ],

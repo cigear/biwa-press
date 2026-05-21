@@ -13,10 +13,10 @@
     "package:ssr": "bash scripts/package-ssr.sh",
     "package:csr": "bash scripts/package-csr.sh",
     "setup:prod": "npm install --omit=dev",
-    "preview": "npm run preview:ssg",
-    "preview:ssg": "cross-env BIWA_RENDER_MODE=ssg BIWA_OUT_DIR=build/ssg vite preview",
+    "preview": "cross-env BIWA_RENDER_MODE=ssg BIWA_OUT_DIR=build/ssg vite preview --host",
+    "preview:ssg": "cross-env BIWA_RENDER_MODE=ssg BIWA_OUT_DIR=build/ssg vite preview --host",
     "preview:ssr": "node build/ssr/index.js",
-    "preview:csr": "cross-env BIWA_RENDER_MODE=csr BIWA_OUT_DIR=build/csr vite preview",
+    "preview:csr": "cross-env BIWA_RENDER_MODE=csr BIWA_OUT_DIR=build/csr vite preview --host",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "format": "prettier --write .",
     "download:fonts": "node scripts/download-fonts.mjs"

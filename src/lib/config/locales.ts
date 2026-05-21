@@ -22,7 +22,8 @@ export const locales = {
     updated: 'Updated Date',
     tags: 'Tags',
     toc: 'On this page',
-    articlesFound: '{count} {count, plural, one {article} other {articles}} found'
+    articlesFound: '{count} {count, plural, one {article} other {articles}} found',
+    mermaidFallbackHint: '(The current device environment may not support preview, original code is displayed)'
   },
   zh: {
     code: 'zh',
@@ -45,7 +46,8 @@ export const locales = {
     updated: '最新修改日期',
     tags: '标签',
     toc: '目录',
-    articlesFound: '找到 {count} 篇文章'
+    articlesFound: '找到 {count} 篇文章',
+    mermaidFallbackHint: '（当前设备环境可能不支持预览，已显示原始代码）'
   },
   ja: {
     code: 'ja',
@@ -68,8 +70,8 @@ export const locales = {
     updated: '最新更新日',
     tags: 'タグ',
     toc: '目次',
-    articlesFound: '{count} 件の記事が見つかりました'
-
+    articlesFound: '{count} 件の記事が見つかりました',
+    mermaidFallbackHint: '（現在のデバイス環境ではプレビューがサポートされていない可能性があるため、元のコードが表示されています）'
   }
 } as const;
 

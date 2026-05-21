@@ -22,12 +22,13 @@ import { buttonExtension } from '$lib/markdown/extensions/button';
 import { audioExtension } from '$lib/markdown/extensions/audio';
 import { poetryExtension } from '$lib/markdown/extensions/poetry';
 import { headlineExtension } from '$lib/markdown/extensions/headline';
+import { mermaidExtension } from '$lib/markdown/extensions/mermaid';
 
 let highlighterPromise: Promise<any> | null = null;
 
 // 注册 marked 扩展 (在服务器端全局注册一次即可)
 marked.use({
-  extensions: [videoEmbedExtension, timelineExtension, galleryExtension, tabsExtension, collapseExtension, cardExtension, githubExtension, buttonExtension, audioExtension, poetryExtension, headlineExtension]
+  extensions: [videoEmbedExtension, timelineExtension, galleryExtension, tabsExtension, collapseExtension, cardExtension, githubExtension, buttonExtension, audioExtension, poetryExtension, headlineExtension, mermaidExtension]
 });
 
 /** 自定义 Shiki 转换器：为带有 showLineNumbers 的代码块添加 has-line-numbers 类名 */
@@ -176,6 +177,10 @@ export async function loadDoc(locale: Locale, slug: string, raw = false) {
     docsRoot: string;
   };
 
+  renderer.currentLocale = locale;
+  renderer.currentFilePath = filePath;
+  renderer.docsRoot = docsRoot;
+
   // 配置图片渲染：点击利用浏览器 Fullscreen API 放大
   renderer.image = (...args: any[]) => {
     const isToken = typeof args[0] === 'object' && args[0] !== null;
@@ -224,11 +229,6 @@ export async function loadDoc(locale: Locale, slug: string, raw = false) {
     const isToken = typeof args[0] === 'object' && args[0] !== null;
     const text = isToken ? args[0].text : args[0];
     const lang = isToken ? args[0].lang : args[1];
-
-    if (lang === 'mermaid') {
-      // 如果是 Mermaid 代码块，直接返回原始 HTML，由客户端 Mermaid.js 处理
-      return `<pre class="language-mermaid"><code class="language-mermaid">${text || ''}</code></pre>`;
-    }
 
     const [language, ...rest] = (lang || '').split(/\s+/);
     const showLineNumbers = rest.includes('showLineNumbers');
