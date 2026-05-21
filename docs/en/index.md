@@ -133,11 +133,11 @@ This starter gives you a VitePress-like foundation with SvelteKit routing, mdsve
 :::
 :::
 
-
 ## Timeline
 :::timeline
-- **2023/10/26**
-  - VitePress 1.0.0-rc.1 released.
-- **2023/07/14**
-  - VitePress 1.0.0-beta.7 released.
+- **2026/05/20**
+  - biwa.dev 0.0.1 opened.
+- **2026/05/18**
+  - BiwaPress 0.0.1 released.
 :::
+

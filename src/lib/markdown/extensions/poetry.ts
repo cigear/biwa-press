@@ -29,14 +29,14 @@ export const poetryExtension: TokenizerAndRendererExtension = {
     const lineClass = isVertical ? 'whitespace-nowrap' : '!m-0 whitespace-normal break-all';
     const lines = t.content.split(/\r?\n/).map((l: string) => `<div class="${lineClass}">${l.trim() || '&nbsp;'}</div>`).join('');
     
-    const containerClass = `poetry-container my-6 md:my-10 ml-auto mr-auto self-center justify-self-center font-serif bg-secondary/5 text-foreground shadow-xl rounded-3xl w-fit max-w-full flex flex-col transition-all hover:shadow-2xl overflow-x-auto ${isVertical ? 'px-6 py-6 md:px-20 md:py-16' : 'px-6 py-6 md:px-16 md:py-12'}`;
+    const containerClass = `poetry-container my-6 md:my-10 mx-auto self-center justify-self-center font-serif bg-secondary/5 text-foreground shadow-xl rounded-3xl w-fit max-w-full flex flex-col transition-all hover:shadow-2xl overflow-x-auto ${isVertical ? 'px-6 py-6 md:px-20 md:py-16' : 'px-6 py-6 md:px-16 md:py-12'}`;
     
     const layoutClass = isVertical 
       ? 'items-center justify-center min-h-[120px] md:min-h-[200px] gap-4 md:gap-8' 
       : 'items-center justify-center gap-4'; // Horizontal mode stays centered
 
-    const writingMode = isVertical ? 'writing-mode: vertical-rl; text-orientation: upright;' : '';
-
+    const writingModeStyle = isVertical ? 'writing-mode: vertical-rl; text-orientation: upright;' : '';
+    
     const authorHtml = t.author
       ? `<div class="flex items-center flex-row gap-2 ${isVertical ? '' : 'justify-center'}">
           <div class="text-sm md:text-base font-bold opacity-60">${t.author}</div>
@@ -45,11 +45,13 @@ export const poetryExtension: TokenizerAndRendererExtension = {
       : '';
 
     return `
-      <div class="${containerClass} ${layoutClass}" style="${writingMode}">
-        <div class="text-xl md:text-3xl font-bold m-0 tracking-tighter text-primary ${isVertical ? '' : 'text-center'}">${t.title}</div>
-        ${authorHtml}
-        <div class="poetry-content flex flex-col ${isVertical ? 'gap-2 md:gap-5' : 'gap-4 md:gap-5'} text-lg md:text-2xl leading-tight tracking-[0.2em] md:tracking-[0.4em] ${isVertical ? '' : 'text-left'}">
-          ${lines}
+      <div class="${containerClass}">
+        <div class="flex flex-col ${layoutClass}" style="${writingModeStyle}">
+          <div class="text-xl md:text-3xl font-bold m-0 tracking-tighter text-primary ${isVertical ? '' : 'text-center'}">${t.title}</div>
+          ${authorHtml}
+          <div class="poetry-content flex flex-col ${isVertical ? 'gap-2 md:gap-5' : 'gap-4 md:gap-5'} text-lg md:text-2xl leading-tight tracking-[0.2em] md:tracking-[0.4em] ${isVertical ? '' : 'text-left'}">
+            ${lines}
+          </div>
         </div>
       </div>`;
   }
