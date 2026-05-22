@@ -803,6 +803,18 @@
   background-color: rgba(239, 68, 68, 0.1) !important;
 }
 
+/* 搜索关键字高亮样式 */
+.search-highlight {
+  background-color: rgba(253, 224, 71, 0.4); /* 亮黄色半透明 */
+  color: inherit;
+  border-radius: 0.125rem;
+  padding: 0 0.1rem;
+}
+
+.dark .search-highlight {
+  background-color: rgba(234, 179, 8, 0.4); /* 深色模式下使用暗金色 */
+}
+
 .prose h5 {
   border-bottom: 2px solid #ef4444;
   padding-bottom: 0.2rem;

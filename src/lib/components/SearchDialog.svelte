@@ -86,7 +86,7 @@
           {#each results as result}
             <a
               class="rounded-md px-3 py-2 transition hover:bg-secondary text-foreground"
-              href={result.href}
+              href="{result.href}?hl={encodeURIComponent(query)}"
               onclick={() => {
                 open = false;
                 query = '';

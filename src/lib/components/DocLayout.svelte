@@ -257,6 +257,75 @@
       isEffectActive = false; // 清理函数：确保旧的异步任务不会覆盖新页面的内容
     };
   });
+
+  // 搜索关键字高亮与自动滚动逻辑
+  $effect(() => {
+    const searchTerm = page.url.searchParams.get('hl');
+    // 依赖路径变化，确保切换页面时重新高亮
+    const _trigger = page.url.pathname;
+
+    // 稍作延迟确保 Markdown 内容和 Poetry/Tabs 等组件已完全渲染
+    const timer = setTimeout(() => {
+      const container = document.querySelector('.doc-content');
+      if (!container) return;
+
+      // 1. 清除页面上所有旧的高亮标记
+      // 解决在同一页面连续搜索不同关键字时，旧高亮无法自动清除的问题
+      container.querySelectorAll('.search-highlight').forEach(el => {
+        el.replaceWith(document.createTextNode(el.textContent || ''));
+      });
+      // 合并被拆分的文本节点，确保后续 TreeWalker 能准确匹配完整词句
+      container.normalize();
+
+      if (!searchTerm) return;
+
+      // 使用 TreeWalker 寻找所有文本节点，避开代码块和已有标签
+      const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+      const nodes: Text[] = [];
+      let node;
+      while ((node = walker.nextNode())) {
+        const parent = node.parentElement;
+        if (parent && 
+            !['SCRIPT', 'STYLE', 'PRE', 'CODE', 'MARK'].includes(parent.tagName) && 
+            !parent.closest('header') && 
+            !parent.closest('nav') && 
+            !parent.closest('pre') && 
+            !parent.closest('code')) {
+          nodes.push(node as Text);
+        }
+      }
+
+      const safeTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(${safeTerm})`, 'gi');
+
+      nodes.forEach(textNode => {
+        const val = textNode.textContent || '';
+        if (val.match(regex)) {
+          const frag = document.createDocumentFragment();
+          let lastIdx = 0;
+          val.replace(regex, (match, p1, offset) => {
+            frag.appendChild(document.createTextNode(val.slice(lastIdx, offset)));
+            const mark = document.createElement('mark');
+            mark.className = 'search-highlight';
+            mark.textContent = match;
+            frag.appendChild(mark);
+            lastIdx = offset + match.length;
+            return match;
+          });
+          frag.appendChild(document.createTextNode(val.slice(lastIdx)));
+          textNode.replaceWith(frag);
+        }
+      });
+
+      // 自动平滑滚动到第一个匹配项
+      const firstMatch = container.querySelector('.search-highlight');
+      if (firstMatch) {
+        firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  });
 </script>
 
 <Header {locale} {groups} {currentPath} />
