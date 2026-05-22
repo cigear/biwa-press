@@ -29,7 +29,7 @@ export const poetryExtension: TokenizerAndRendererExtension = {
     const lineClass = isVertical ? 'whitespace-nowrap' : '!m-0 whitespace-normal break-all';
     const lines = t.content.split(/\r?\n/).map((l: string) => `<div class="${lineClass}">${l.trim() || '&nbsp;'}</div>`).join('');
     
-    const containerClass = `poetry-container my-6 md:my-10 mx-auto self-center justify-self-center font-serif bg-secondary/5 text-foreground shadow-xl rounded-3xl w-fit max-w-full flex flex-col transition-all hover:shadow-2xl overflow-x-auto ${isVertical ? 'px-6 py-6 md:px-20 md:py-16' : 'px-6 py-6 md:px-16 md:py-12'}`;
+    const containerClass = `poetry-container my-4 md:my-6 mx-auto self-center justify-self-center font-serif bg-secondary/5 text-foreground shadow-xl rounded-3xl w-fit max-w-full flex flex-col transition-all hover:shadow-2xl overflow-x-auto ${isVertical ? 'px-6 py-6 md:px-20 md:py-16' : 'px-6 py-6 md:px-16 md:py-12'}`;
     
     const layoutClass = isVertical 
       ? 'items-center justify-center min-h-[120px] md:min-h-[200px] gap-4 md:gap-8' 

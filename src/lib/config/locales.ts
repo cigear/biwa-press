@@ -23,6 +23,8 @@ export const locales = {
     tags: 'Tags',
     toc: 'On this page',
     articlesFound: '{count} {count, plural, one {article} other {articles}} found',
+    themeLight: 'Light',
+    themeDark: 'Dark',
     mermaidFallbackHint: '(The current device environment may not support preview, original code is displayed)'
   },
   zh: {
@@ -47,6 +49,8 @@ export const locales = {
     tags: '标签',
     toc: '目录',
     articlesFound: '找到 {count} 篇文章',
+    themeLight: '浅色',
+    themeDark: '深色',
     mermaidFallbackHint: '（当前设备环境可能不支持预览，已显示原始代码）'
   },
   ja: {
@@ -71,6 +75,8 @@ export const locales = {
     tags: 'タグ',
     toc: '目次',
     articlesFound: '{count} 件の記事が見つかりました',
+    themeLight: 'ライト',
+    themeDark: 'ダーク',
     mermaidFallbackHint: '（現在のデバイス環境ではプレビューがサポートされていない可能性があるため、元のコードが表示されています）'
   }
 } as const;

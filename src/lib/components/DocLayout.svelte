@@ -1,3 +1,11 @@
+<script module lang="ts">
+  // 模块级变量，在页面导航（组件卸载再挂载）期间保持状态
+  // 避免 Mermaid 重复初始化同一个主题，防止 DOM 样式膨胀
+  let lastInitializedTheme: string | null = null;
+  // 持续增长的计数器，确保在 SPA 生命周期内 SVG ID 绝对唯一
+  let mermaidCounter = 0;
+</script>
+
 <script lang="ts">
   import { page } from "$app/state";
   import type { Locale } from "$lib/config/locales";
@@ -131,15 +139,48 @@
     });
   });
 
-  let mermaidInitialized = false;
+  // 追踪主题变化以触发 Mermaid 重绘
+  let isDarkMode = $state(false);
+
+  $effect(() => {
+    const updateTheme = () => {
+      isDarkMode = document.documentElement.classList.contains('dark');
+    };
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    updateTheme(); // 初始化状态
+    return () => observer.disconnect();
+  });
 
   // 渲染 Mermaid 图表
   $effect(() => {
+    let isEffectActive = true;
+
     // 依赖页面路径变化
     const path = page.url.pathname;
+    // 依赖主题变化，确保切换主题时重新渲染
+    const _themeTrigger = isDarkMode;
 
-    // 1. 针对旧版浏览器的特性检测 (Mermaid v11 需要 randomUUID)
-    const isSupported = window.crypto && typeof window.crypto.randomUUID === 'function';
+    // 1. 针对旧版浏览器和非安全上下文 (HTTP) 的特性检测与修复
+    if (typeof window !== 'undefined') {
+      // 核心修复：iOS Safari 在非 HTTPS 环境下不提供 randomUUID，而 Mermaid v11 强依赖它
+      if (window.crypto && !window.crypto.randomUUID) {
+        // @ts-ignore - 为局域网测试环境注入补丁，防止库崩溃
+        window.crypto.randomUUID = () => {
+          return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+            const r = (Math.random() * 16) | 0;
+            const v = c === 'x' ? r : (r & 0x3) | 0x8;
+            return v.toString(16);
+          });
+        };
+      }
+    }
+
+    const isSupported = 
+      typeof window !== 'undefined' && 
+      (!!window.crypto && typeof window.crypto.randomUUID === 'function') &&
+      ('ResizeObserver' in window);
+
     if (!isSupported) {
       console.warn('[Biwa Press] Detected legacy browser, keeping mermaid fallback.');
       // 如果环境不支持，立即显示所有的 fallback 代码块
@@ -155,40 +196,54 @@
     if (containers.length > 0) {
       import("mermaid").then((m) => {
         const mermaid = m.default || m;
-        if (!mermaidInitialized) {
+        if (!isEffectActive) return;
+
+        const targetTheme = isDarkMode ? "dark" : "default";
+
+        // 优化：仅在主题确实改变时才调用 initialize
+        // Mermaid 每次初始化都会注入大量样式到 head，通过此检查避免内存和 DOM 资源浪费
+        if (lastInitializedTheme !== targetTheme) {
           mermaid.initialize({
             startOnLoad: false,
-            theme: "default", // 改为默认主题，生成黑线黑字
+            theme: targetTheme,
             fontFamily: "var(--font-base)",
             securityLevel: "loose",
+            themeVariables: {
+              background: 'transparent',
+            },
           });
-          mermaidInitialized = true;
+          lastInitializedTheme = targetTheme;
         }
 
-        containers.forEach(async (container) => {
-          const target = container.querySelector('.mermaid-render-target') as HTMLElement;
-          const fallback = container.querySelector('.mermaid-fallback') as HTMLElement;
-          const src = container.getAttribute('data-mermaid-src');
+        // 使用串行渲染，避免移动端同时渲染多个图表导致崩溃
+        (async () => {
+          for (const container of Array.from(containers)) {
+            const target = container.querySelector('.mermaid-render-target') as HTMLElement;
+            const fallback = container.querySelector('.mermaid-fallback') as HTMLElement;
+            const src = container.getAttribute('data-mermaid-src');
 
-          if (target && fallback && src) {
-            try {
-              const code = decodeURIComponent(src);
-              const id = 'mermaid-' + Math.random().toString(36).slice(2, 9);
-              
-              // 执行手动渲染
-              const { svg } = await mermaid.render(id, code);
-              target.innerHTML = svg;
-              
-              // 渲染成功后，隐藏 fallback，显示图形
-              target.classList.remove('hidden');
-              fallback.classList.add('hidden');
-            } catch (err) {
-              console.error('Mermaid individual render failed:', err);
-              // 单个渲染失败时，显示 fallback
-              fallback.classList.remove('hidden');
+            if (target && fallback && src) {
+              if (!isEffectActive) break; // 如果页面已切换或重新触发，停止当前渲染
+
+              try {
+                const code = decodeURIComponent(src);
+                const id = `mermaid-svg-${Date.now()}-${mermaidCounter++}`;
+                
+                // 执行手动渲染
+                const { svg } = await mermaid.render(id, code);
+                target.innerHTML = svg;
+                
+                // 渲染成功后，隐藏 fallback，显示图形
+                target.classList.remove('hidden');
+                fallback.classList.add('hidden');
+              } catch (err) {
+                console.error('Mermaid individual render failed:', err);
+                // 单个渲染失败时，显示 fallback
+                fallback.classList.remove('hidden');
+              }
             }
           }
-        });
+        })();
       }).catch(err => {
         console.error('Failed to load mermaid library:', err);
         // 库加载失败时，显示所有 fallback
@@ -197,13 +252,17 @@
         });
       });
     }
+
+    return () => {
+      isEffectActive = false; // 清理函数：确保旧的异步任务不会覆盖新页面的内容
+    };
   });
 </script>
 
 <Header {locale} {groups} {currentPath} />
 
 <div
-  class="mx-auto grid min-h-[calc(100vh-3.5rem)] max-w-7xl grid-cols-1 px-4 lg:grid-cols-[260px_1fr_200px] lg:gap-10"
+  class="mx-auto grid min-h-[calc(100vh-3.5rem)] max-w-7xl grid-cols-1 px-4 lg:grid-cols-[260px_1fr_200px] lg:gap-10 bg-background text-foreground"
 >
   <Sidebar {locale} sidebar={groups} {currentPath} />
 
@@ -214,13 +273,13 @@
       {#if hasMetadataHeader}
         <header class="mb-10 flex flex-col gap-4">
           {#if metadata.description}
-            <div class="text-3xl font-extrabold text-zinc-900 md:text-4xl">
+            <div class="text-3xl font-extrabold text-foreground md:text-4xl">
               {metadata.description}
             </div>
           {/if}
 
           {#if metadata.published || metadata.updated}
-            <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500 md:text-sm">
+            <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground md:text-sm">
               {#if metadata.published}
                 <div class="flex items-center">
                   <span class="font-semibold"
@@ -242,14 +301,14 @@
           {/if}
 
           {#if metadata.tags && Array.isArray(metadata.tags) && metadata.tags.length > 0}
-            <div class="flex flex-wrap gap-2">
-              <span class="mr-1 self-center text-xs text-zinc-400"
+            <div class="flex flex-wrap gap-2 text-muted-foreground">
+              <span class="mr-1 self-center text-xs"
                 >{$t("tags", { default: "Tags" })}:</span
               >
               {#each metadata.tags as tag}
                 <a
-                  href="/{locale}/tags/{tag}"
-                  class="inline-flex items-center rounded-md border border-zinc-200 bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-800 transition-colors hover:bg-zinc-200 hover:text-zinc-950"
+                  href="/{locale}/tags/{tag}" 
+                  class="inline-flex items-center rounded-md border border-border bg-secondary px-2.5 py-0.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary hover:text-foreground"
                 >
                   {tag}
                 </a>
@@ -263,18 +322,18 @@
 
       <!-- 底部翻页导航 -->
       <nav
-        class="mt-16 flex items-start justify-between gap-4 border-t border-zinc-100 pt-8"
+        class="mt-16 flex items-start justify-between gap-4 border-t border-border pt-8"
       >
         {#if pagination.prev}
           <a
             href={pagination.prev.href}
             class="group flex flex-1 flex-col gap-1 min-w-0 transition-colors"
           >
-            <span class="text-xs font-medium text-zinc-400"
+            <span class="text-xs font-medium text-muted-foreground"
               >{$t("previous", { default: "Previous" })}</span
             >
             <span
-              class="flex items-center gap-1 text-base font-semibold text-zinc-600 transition-colors group-hover:text-zinc-950"
+              class="flex items-center gap-1 text-base font-semibold text-muted-foreground transition-colors group-hover:text-foreground"
             >
               <ChevronLeft
                 size={18}
@@ -290,11 +349,11 @@
             href={pagination.next.href}
             class="group flex flex-1 flex-col items-end gap-1 min-w-0 transition-colors ms-auto"
           >
-            <span class="text-xs font-medium text-zinc-400"
+            <span class="text-xs font-medium text-muted-foreground"
               >{$t("next", { default: "Next" })}</span
             >
             <span
-              class="flex items-center gap-1 text-base font-semibold text-zinc-600 transition-colors group-hover:text-zinc-950"
+              class="flex items-center gap-1 text-base font-semibold text-muted-foreground transition-colors group-hover:text-foreground"
             >
               {pagination.next.title}
               <ChevronRight
@@ -308,7 +367,7 @@
     </main>
   </div>
 
-  <aside class="lg:block">
+  <aside class="lg:block bg-background">
     <DocToc items={toc} minDepth={2} maxDepth={3} />
   </aside>
 </div>

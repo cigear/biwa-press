@@ -57,28 +57,28 @@
         <a
           {href}
           class="flex-1 py-1.5 px-2 -mx-2 text-sm transition-colors rounded-md {currentPath === href
-            ? 'font-bold text-zinc-950 bg-zinc-100' 
-            : 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-50'}"
+            ? 'font-bold text-foreground bg-secondary' 
+            : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}"
           onclick={() => (open = false)}
         >
           {item.title}
         </a>
       {:else if hasChildren}
         <button
-          class="flex-1 text-left py-1.5 px-2 -mx-2 text-sm font-bold text-zinc-600 hover:text-zinc-950 hover:bg-zinc-50 rounded-md transition-colors"
+          class="flex-1 text-left py-1.5 px-2 -mx-2 text-sm font-bold text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md transition-colors"
           onclick={() => handleGroupClick(item)}
         >
           {item.title}
         </button>
       {:else}
-        <h3 class="py-1.5 px-2 -mx-2 text-sm font-bold text-zinc-600">
+        <h3 class="py-1.5 px-2 -mx-2 text-sm font-bold text-muted-foreground">
           {item.title}
         </h3>
       {/if}
 
       {#if hasChildren}
         <button
-          class="p-1 text-zinc-600 hover:text-zinc-950 transition-colors shrink-0"
+          class="p-1 text-muted-foreground hover:text-foreground transition-colors shrink-0"
           onclick={() => handleGroupClick(item)}
           aria-label="Toggle group"
         >
@@ -91,7 +91,7 @@
     </div>
 
     {#if hasChildren && expandedGroups[item.title]}
-      <div class="mt-1 border-l border-zinc-100 ml-2 pl-4">
+      <div class="mt-1 border-l border-border ml-2 pl-4">
         {#each item.items as subItem}
           {@render navItem(subItem, depth + 1)}
         {/each}
@@ -110,12 +110,12 @@
     ></button>
     <div 
       transition:fly={{ x: -300, duration: 300, opacity: 1 }}
-      class="fixed left-0 top-0 h-full w-72 border-r border-zinc-100 bg-white p-6 shadow-2xl overflow-y-auto"
+      class="fixed left-0 top-0 h-full w-72 border-r border-border bg-background p-6 shadow-2xl overflow-y-auto"
     >
       <div class="flex items-center justify-between mb-4">
-        <span class="text-sm font-bold text-zinc-900">{site.title}</span>
+        <span class="text-sm font-bold text-foreground">{site.title}</span>
         <button
-          class="flex h-9 w-9 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-950"
+          class="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
           onclick={() => (open = false)}
           aria-label="Close menu"
         >

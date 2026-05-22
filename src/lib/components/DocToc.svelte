@@ -197,20 +197,20 @@
     overflow: hidden auto;
     scrollbar-width: thin;
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--muted-foreground);
   }
 
   .biwa-toc__title {
     font-weight: 600;
     margin-bottom: 0.75rem;
-    color: #374151;
+    color: var(--foreground);
   }
 
   .biwa-toc__list {
     list-style: none;
     padding: 0;
     margin: 0 0 0 2px;
-    border-left: 1px solid #e5e7eb; /* 轨道线 (zinc-200) */
+    border-left: 1px solid var(--border);
   }
 
   .biwa-toc__item {
@@ -240,8 +240,8 @@
   }
 
   .biwa-toc__item button:hover {
-    color: #111827;
-    background-color: #f3f4f6;
+    color: var(--foreground);
+    background-color: var(--secondary);
   }
 
   /* 当前位置的粗线指示器 */
@@ -252,12 +252,12 @@
     top: 0;
     bottom: 0;
     width: 2px; /* 粗线宽度 */
-    background-color: #111827; /* 改为黑色 */
+    background-color: var(--foreground);
     z-index: 1;
   }
 
   .biwa-toc__item.is-active button {
-    color: #111827; /* 改为黑色 */
+    color: var(--foreground);
     font-weight: 600;
     background-color: transparent; /* 移除背景色，突出左侧竖线 */
   }

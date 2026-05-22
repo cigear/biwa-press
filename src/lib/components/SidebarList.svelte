@@ -48,7 +48,7 @@
   });
 </script>
 
-<ul class={depth === 0 ? "space-y-2" : "mt-1 space-y-1 border-l border-zinc-100 ml-2 pl-4"}>
+<ul class={depth === 0 ? "space-y-2" : "mt-1 space-y-1 border-l border-border ml-2 pl-4"}>
   {#each items as item}
     {@const hasChildren = item.items && item.items.length > 0}
     <li class="relative">
@@ -57,28 +57,28 @@
           {@const href = `/${locale}/docs/${item.slug}`}
           <a
             {href}
-            class="flex-1 py-1.5 text-sm transition-colors {currentPath === href 
-              ? 'font-bold text-zinc-950 bg-zinc-100 rounded-md px-2 -mx-2' 
-              : 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-50 rounded-md px-2 -mx-2'}"
+            class="flex-1 py-1.5 text-sm transition-colors {currentPath === href
+              ? 'font-bold text-foreground bg-secondary rounded-md px-2 -mx-2'
+              : 'text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md px-2 -mx-2'}"
           >
             {item.title}
           </a>
         {:else if hasChildren}
           <button
-            class="flex-1 text-left py-1.5 px-2 -mx-2 text-sm font-bold text-zinc-600 hover:text-zinc-950 hover:bg-zinc-50 rounded-md transition-colors"
+            class="flex-1 text-left py-1.5 px-2 -mx-2 text-sm font-bold text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md transition-colors"
             onclick={() => handleGroupClick(item)}
           >
             {item.title}
           </button>
         {:else}
-          <div class="py-1.5 px-2 -mx-2 text-sm font-bold text-zinc-600">
+          <div class="py-1.5 px-2 -mx-2 text-sm font-bold text-muted-foreground">
             {item.title}
           </div>
         {/if}
 
         {#if hasChildren}
           <button
-            class="p-1 text-zinc-600 hover:text-zinc-950 transition-colors shrink-0"
+            class="p-1 text-muted-foreground hover:text-foreground transition-colors shrink-0"
             onclick={() => handleGroupClick(item)}
             aria-label="Toggle group"
           >

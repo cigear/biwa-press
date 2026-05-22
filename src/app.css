@@ -2,10 +2,34 @@
 @plugin "@tailwindcss/typography";
 @import "./fonts.css";
 
+:root {
+  --background: #ffffff;
+  --foreground: #09090b;
+  --secondary: #f4f4f5;
+  --border: #e4e4e7;
+  --card: #ffffff;
+  --muted-foreground: #71717a;
+}
+
+.dark {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --secondary: #18181b;
+  --border: #27272a;
+  --card: #09090b;
+  --muted-foreground: #a1a1aa;
+}
+
 @theme {
   /* 迁移自 tailwind.config.js */
   --color-brand: #3b82f6;
   --color-brand-dark: #2563eb;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-secondary: var(--secondary);
+  --color-border: var(--border);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
 
   /* 系统字体栈：优先使用 Inter，随后是系统原生字体 */
   --font-base: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -23,6 +47,8 @@
 
 @layer base {
   html {
+    background-color: var(--background);
+    color: var(--foreground);
     /* 使用更稳健的字体声明，并使用变量 */
     font-family: var(--font-base);
 
@@ -127,6 +153,11 @@
     display: block;
     /* 滚动条现在由 code 标签产生 */
     overflow-x: auto;
+    /* 核心修复：防止行内代码样式污染代码块内部 */
+    background-color: transparent !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    color: inherit !important;
   }
 
   .doc-content .copy-btn {
@@ -197,6 +228,20 @@
   overflow: visible;
 }
 
+/* 强制渲染后的 Mermaid SVG 背景透明，使其显示容器配置的背景色 */
+.mermaid-render-target svg {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* 强制 Mermaid SVG 内部的背景矩形透明 */
+.mermaid-render-target svg rect.background,
+.mermaid-render-target svg rect[fill="white"],
+.mermaid-render-target svg rect[fill="#fff"],
+.mermaid-render-target svg rect[fill="#ffffff"] {
+  fill: transparent !important;
+}
+
 .vp-timeline {
   position: relative;
   margin: 2rem 0;
@@ -210,7 +255,7 @@
   bottom: 0;
   left: 0;
   width: 2px; /* 时间线轴的宽度 */
-  background-color: #e4e4e7; /* 使用 zinc-200, 类似 VitePress 的分割线颜色 */
+  background-color: var(--border);
 }
 
 /* 假设时间线内部是无序列表 */
@@ -234,8 +279,8 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background-color: #18181b; /* 改为黑色 */
-  border: 2px solid #ffffff; /* 点的边框，使用白色背景色营造浮动效果 */
+  background-color: var(--foreground);
+  border: 2px solid var(--background);
   box-sizing: border-box;
   z-index: 1; /* 确保点在时间线轴之上 */
 }
@@ -249,14 +294,14 @@
   display: block;
   font-size: 1.1em;
   margin-bottom: 0.5rem;
-  color: #18181b; /* zinc-900 */
+  color: var(--foreground);
 }
 
 /* 针对时间线项内部的普通文本 */
 .vp-timeline li p {
   margin-top: 0;
   margin-bottom: 0.5rem;
-  color: #52525b; /* zinc-600 */
+  color: var(--muted-foreground);
 }
 
 /* 针对时间线项内部的嵌套列表（如果存在） */
@@ -327,7 +372,7 @@
   aspect-ratio: 1 / 1;
   overflow: hidden;
   border-radius: 8px;
-  background-color: #f4f4f5;
+  background-color: var(--secondary);
   /* Make li a flex container to center its content */
   display: flex;
   align-items: center; /* Vertically center the p element */
@@ -386,7 +431,7 @@
 /* Tabs 样式 */
 .vp-tabs {
   margin: 1.5rem 0;
-  border: 1px solid #e4e4e7;
+  border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
   display: flex; /* 使用 Flexbox 布局 */
@@ -403,21 +448,21 @@
   cursor: pointer;
   font-weight: 500;
   font-size: 14px;
-  color: #71717a;
+  color: var(--muted-foreground);
   border-bottom: 2px solid transparent;
   transition: all 0.2s;
   order: 1; /* 确保所有标签页标题排在前面 */
 }
 
 .vp-tab-label:hover {
-  color: #18181b;
+  color: var(--foreground);
 }
 
 /* 当单选框被选中时，对应的 label 样式 */
 .vp-tab-input:checked + .vp-tab-label {
-  color: #18181b;
-  border-bottom-color: #18181b;
-  background-color: #f8fafc;
+  color: var(--foreground);
+  border-bottom-color: var(--foreground);
+  background-color: var(--secondary);
   font-weight: 600; /* 选中状态加粗 */
 }
 
@@ -426,8 +471,8 @@
   order: 2; /* 内容区域排在标签页标题之后 */
   width: 100%; /* 内容区域占据整行 */
   padding: 16px;
-  background: #fff;
-  border-top: 1px solid #e4e4e7;
+  background: var(--background);
+  border-top: 1px solid var(--border);
 }
 
 .vp-tab-input:checked + .vp-tab-label + .vp-tab-content {
@@ -467,9 +512,9 @@
 /* Details / Collapse 样式 */
 .vp-details {
   margin: 1.5rem 0;
-  border: 1px solid #e4e4e7;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background-color: #fafafa;
+  background-color: var(--secondary);
   padding: 12px 16px;
   transition: background-color 0.2s;
 }
@@ -479,29 +524,29 @@
   cursor: pointer;
   user-select: none;
   outline: none;
-  color: #18181b; /* 保持黑色风格 */
+  color: var(--foreground);
 }
 
 .vp-details[open] {
-  background-color: #ffffff;
+  background-color: var(--background);
 }
 
 .vp-details[open] .vp-details-summary {
   margin-bottom: 12px;
-  border-bottom: 1px solid #e4e4e7;
+  border-bottom: 1px solid var(--border);
   padding-bottom: 8px;
 }
 
 .vp-details-content {
-  color: #52525b; /* zinc-600 内容颜色稍淡 */
+  color: var(--muted-foreground);
 }
 
 /* Card 样式 */
 .vp-card {
   margin: 1.5rem 0;
-  border: 1px solid #e4e4e7;
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background-color: #ffffff;
+  background-color: var(--card);
   display: block;
   text-decoration: none !important;
   color: inherit;
@@ -519,13 +564,13 @@
   font-weight: 700;
   font-size: 1.1rem;
   border-bottom: none;
-  color: #18181b;
+  color: var(--foreground);
   background-color: transparent;
 }
 
 .vp-card-content {
   padding: 20px;
-  color: #52525b;
+  color: var(--muted-foreground);
 }
 
 .vp-card-title + .vp-card-content {
@@ -546,8 +591,8 @@
 
 .vp-button-container a {
   display: inline-block !important;
-  background-color: #09090b !important; /* zinc-950 黑底 */
-  color: #ffffff !important; /* 白字 */
+  background-color: var(--foreground) !important;
+  color: var(--background) !important;
   padding: 0.6rem 1.5rem !important;
   border-radius: 0.5rem;
   font-size: 1rem;
@@ -556,18 +601,20 @@
   transition: all 0.2s ease;
 }
 
-.vp-button-container a:hover {
-  background-color: #27272a !important; /* zinc-800 悬停变浅 */
+/* 提高优先级，防止被下方的全局 .prose a:hover 覆盖为蓝色 */
+.prose .vp-button-container a:hover {
+  opacity: 0.9;
   text-decoration: none !important;
+  color: var(--background) !important;
 }
 
 /* GitHub Embed Styles */
 .vp-github-embed {
   margin: 1.5rem 0;
   padding: 1rem;
-  border: 1px solid #e4e4e7;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background-color: #fafafa;
+  background-color: var(--secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -579,7 +626,7 @@
   align-items: center;
   gap: 0.5rem;
   text-decoration: none;
-  color: #18181b;
+  color: var(--foreground);
   font-weight: 600;
   font-size: 1.1rem;
   transition: color 0.2s;
@@ -613,7 +660,7 @@
 
 .vp-github-fallback {
   font-size: 0.9em;
-  color: #71717a;
+  color: var(--muted-foreground);
   margin-top: 0.5rem;
 }
 
@@ -622,21 +669,21 @@
 .vp-card-content h1 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #18181b;
+  color: var(--foreground);
   margin: 1.5rem 0 1rem;
 }
 
 .vp-card-content h2 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #18181b;
+  color: var(--foreground);
   margin: 1.25rem 0 0.75rem;
 }
 
 .vp-card-content h3 {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #18181b;
+  color: var(--foreground);
   margin: 1rem 0 0.5rem;
 }
 
@@ -645,36 +692,127 @@
   border-bottom: 3px solid #ef4444;
   padding-bottom: 0.3rem;
   width: fit-content;
+  color: var(--foreground) !important;
 }
 
 .prose h2 {
   border-bottom: 3px solid #ef4444;
   padding-bottom: 0.3rem;
   width: fit-content;
+  color: var(--foreground) !important;
 }
 
 .prose h3 {
   border-bottom: 2px solid #ef4444;
   padding-bottom: 0.2rem;
   width: fit-content;
+  color: var(--foreground) !important;
+}
+
+/* 全局排版系统覆盖：确保在深浅模式下文字对比度均为最高 */
+/* 移出 @layer base 以确保具有更高的优先级，能够覆盖 prose-zinc 等工具类 */
+.prose {
+  --tw-prose-body: var(--foreground);
+  --tw-prose-headings: var(--foreground);
+  --tw-prose-lead: var(--foreground);
+  --tw-prose-links: var(--foreground);
+  --tw-prose-bold: var(--foreground);
+  --tw-prose-counters: var(--muted-foreground);
+  --tw-prose-bullets: var(--muted-foreground);
+  --tw-prose-hr: var(--border);
+  --tw-prose-quotes: var(--foreground);
+  --tw-prose-quote-borders: var(--border);
+  --tw-prose-captions: var(--muted-foreground);
+  --tw-prose-th-borders: var(--border);
+  --tw-prose-td-borders: var(--border);
+
+  --tw-prose-invert-body: var(--foreground);
+  --tw-prose-invert-headings: var(--foreground);
+  --tw-prose-invert-lead: var(--foreground);
+  --tw-prose-invert-links: var(--foreground);
+  --tw-prose-invert-bold: var(--foreground);
+  --tw-prose-invert-counters: var(--muted-foreground);
+  --tw-prose-invert-bullets: var(--muted-foreground);
+  --tw-prose-invert-hr: var(--border);
+  --tw-prose-invert-quotes: var(--foreground);
+  --tw-prose-invert-quote-borders: var(--border);
+  --tw-prose-invert-captions: var(--muted-foreground);
+  --tw-prose-invert-th-borders: var(--border);
+  --tw-prose-invert-td-borders: var(--border);
+}
+
+.prose :where(p, li) {
+  color: var(--foreground) !important;
+}
+
+.prose a {
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.prose a:hover {
+  color: var(--color-brand) !important;
 }
 
 .prose h4 {
   border-bottom: 2px solid #ef4444;
   padding-bottom: 0.2rem;
   width: fit-content;
+  color: var(--foreground) !important;
 }
 
+/* 诗词组件悬停浮动动作：显式添加位移，使其在所有模式下都有物理升降感 */
+.poetry-container:hover {
+  transform: translateY(-4px);
+}
+
+/* 诗词组件深色模式全局适配 */
+.dark .poetry-container {
+  /* 提升容器背景亮度，并增加边框增强层级感 */
+  background-color: var(--secondary) !important;
+  border: 1px solid var(--border);
+}
+
+.dark .poetry-container:hover {
+  /* 深色模式下移除边框高亮 */
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.8) !important;
+}
+
+.dark .poetry-container .text-foreground,
+.dark .poetry-container .poetry-content,
+.dark .poetry-container .text-primary {
+  /* 强制标题和正文使用高亮的前景色 */
+  color: var(--foreground) !important;
+}
+
+.dark .poetry-container .opacity-60 {
+  /* 提升作者名等次要信息的透明度，防止太暗 */
+  opacity: 0.9 !important;
+}
+
+/* 深色模式下的红色印章优化 */
+.dark .poetry-container [class*="text-red-800"] {
+  color: #f87171 !important; /* 使用亮红色 (red-400) */
+}
+
+.dark .poetry-container [class*="border-red-800"] {
+  border-color: rgba(248, 113, 113, 0.4) !important;
+}
+
+.dark .poetry-container [class*="bg-red-500"] {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+}
 
 .prose h5 {
   border-bottom: 2px solid #ef4444;
   padding-bottom: 0.2rem;
   width: fit-content;
+  color: var(--foreground) !important;
 }
-
 
 .prose h6 {
   border-bottom: 2px solid #ef4444;
   padding-bottom: 0.2rem;
   width: fit-content;
+  color: var(--foreground) !important;
 }

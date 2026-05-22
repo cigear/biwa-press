@@ -8,7 +8,7 @@ image: "/images/covers/biwa-cover.png"
 
 :::poetry 山枇杷 |（唐） 白居易 |v
 深山老去惜年华
-况对东溪野枇
+况对东溪野枇杷
 火树风来翻绛焰
 琼枝日出晒红纱
 回看桃李都无色

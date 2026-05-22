@@ -36,10 +36,10 @@
   // page.params.slug can be undefined for the root of a [...slug] route
   slug={page.params.slug}
 >
-  <div class="prose max-w-none prose-zinc 
-    prose-headings:scroll-mt-20 
-    prose-a:text-zinc-900 prose-a:font-medium hover:prose-a:text-zinc-600
-    prose-pre:bg-zinc-950 prose-pre:border prose-pre:border-zinc-800">
+  <div class="prose max-w-none dark:prose-invert
+    prose-headings:scroll-mt-20
+    prose-code:text-muted-foreground prose-code:bg-secondary/50 prose-code:rounded prose-code:px-1 
+    prose-code:before:content-none prose-code:after:content-none">
     {@html data.contentHtml}
   </div>
 </DocLayout>

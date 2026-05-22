@@ -6,6 +6,10 @@ order: 1
 
 # Getting Started
 
+> 引用したい文章はこちらに記述します。
+> 複数行になる場合は、改行ごとに `>` を記載する必要があります。
+>> 引用したい文章はこちらに記述します。
+
 Install dependencies:
 
 ```bash

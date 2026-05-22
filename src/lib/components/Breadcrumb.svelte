@@ -47,17 +47,17 @@
 </script>
 
 {#if breadcrumbs.length > 0}
-  <nav class="sticky top-14 z-20 flex flex-wrap items-center gap-1.5 border-b border-zinc-100 bg-white py-2 text-sm text-zinc-500">
+  <nav class="sticky top-14 z-20 flex flex-wrap items-center gap-1.5 border-b border-border bg-background py-2 text-sm text-muted-foreground">
     {#each breadcrumbs as crumb, i}
       {#if i > 0}
-        <ChevronRight size={14} class="text-zinc-300" />
+        <ChevronRight size={14} class="opacity-50" />
       {/if}
       {#if crumb.href && i < breadcrumbs.length - 1}
-        <a href={crumb.href} class="transition-colors hover:text-zinc-950">
+        <a href={crumb.href} class="transition-colors hover:text-foreground">
           {crumb.title}
         </a>
       {:else}
-        <span class={i === breadcrumbs.length - 1 ? "font-medium text-zinc-950" : ""}>
+        <span class={i === breadcrumbs.length - 1 ? "font-medium text-foreground" : ""}>
           {crumb.title}
         </span>
       {/if}

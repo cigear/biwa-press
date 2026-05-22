@@ -3,6 +3,7 @@
   import type { Group } from "$lib/docs"; 
   import { site } from "$lib/config/site";
   import SearchDialog from "./SearchDialog.svelte";
+  import ThemeToggle from "./ThemeToggle.svelte";
   import Drawer from "./Drawer.svelte";
   import { Languages, ChevronDown, Check } from "@lucide/svelte";
   import { fly } from "svelte/transition";
@@ -44,12 +45,12 @@
 </script>
 
 <header
-  class="sticky top-0 z-30 border-b border-zinc-200 bg-white"
+  class="sticky top-0 z-30 border-b border-border bg-background text-foreground"
 >
   <div class="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
     <div class="flex items-center gap-4">
       <button
-        class="lg:hidden"
+        class="lg:hidden text-foreground"
         onclick={() => (open = !open)}
         aria-label="Toggle menu"
       >
@@ -69,18 +70,21 @@
       </button>
       <a
         href={`/${locale}/`}
-        class="text-sm font-semibold text-zinc-950"
+        class="text-sm font-semibold text-foreground"
       >
         {site.title}
       </a>
     </div>
 
     <div class="flex items-center gap-3 sm:gap-4">
+      <!-- 主题切换按钮 -->
+      <ThemeToggle />
+
       <!-- 语言切换 -->
       <div class="relative z-56"> <!-- 添加 z-index，确保其堆叠上下文高于遮罩层 -->
         <button
           onclick={() => (isLangOpen = !isLangOpen)}
-          class="relative z-61 flex cursor-pointer items-center gap-1 rounded-full border border-zinc-200 bg-white px-3 py-1 text-sm text-zinc-500 transition-colors hover:text-zinc-950 active:scale-95 sm:px-4 sm:py-1.5"
+          class="relative z-61 flex cursor-pointer items-center gap-1 rounded-full border border-border bg-background px-3 py-1 text-sm text-muted-foreground transition-colors hover:text-foreground active:scale-95 sm:px-4 sm:py-1.5"
         >
           <Languages size={16} />
           <span class="hidden sm:inline">{currentLocale.label}</span>
@@ -101,7 +105,7 @@
 
           <div
             transition:fly={{ y: 8, duration: 150 }}
-            class="absolute right-0 z-20 mt-2 w-40 overflow-hidden rounded-lg border border-zinc-100 bg-white py-1 shadow-xl"
+            class="absolute right-0 z-20 mt-2 w-40 overflow-hidden rounded-lg border border-border bg-background py-1 shadow-xl"
           > {#each Object.values(locales) as item}
               {@const targetHref = getLocalizedHref(item.code)}
               <a
@@ -109,13 +113,13 @@
                 data-sveltekit-preload-data="off"
                 class="flex w-full items-center justify-between px-4 py-3 text-sm transition-colors {item.code ===
                 locale
-                  ? 'bg-zinc-50 font-bold text-zinc-950'
-                  : 'text-zinc-600 hover:bg-zinc-50'}"
+                  ? 'bg-secondary font-bold text-foreground'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}"
                 onclick={() => (isLangOpen = false)}
               >
                 {item.label}
                 {#if item.code === locale}
-                  <Check size={14} class="text-zinc-950" />
+                  <Check size={14} class="text-foreground" />
                 {/if}
               </a>
             {/each}
@@ -129,7 +133,7 @@
         href="https://github.com/cigear"
         target="_blank"
         rel="noopener noreferrer"
-        class="text-zinc-950 transition-colors hover:opacity-70"
+        class="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-all hover:bg-secondary hover:text-foreground dark:bg-foreground dark:text-background dark:border-transparent dark:hover:opacity-90"
         aria-label="GitHub"
       >
         <svg
