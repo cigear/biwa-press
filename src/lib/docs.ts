@@ -11,6 +11,7 @@ export type SidebarItem = {
   slug?: string;
   _path: string; // 内部用于唯一匹配路径
   order: number;
+  createdAt?: number;
   items?: SidebarItem[];
 };
 

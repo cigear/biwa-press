@@ -23,12 +23,23 @@ import { audioExtension } from '$lib/markdown/extensions/audio';
 import { poetryExtension } from '$lib/markdown/extensions/poetry';
 import { headlineExtension } from '$lib/markdown/extensions/headline';
 import { mermaidExtension } from '$lib/markdown/extensions/mermaid';
+import { urlLinkExtension } from '$lib/markdown/extensions/urllink';
 
 let highlighterPromise: Promise<any> | null = null;
 
+/** 格式化日期为 YYYY-MM-DD HH:mm (24小时制) */
+function formatFileDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mm = String(date.getMinutes()).padStart(2, '0');
+  return `${y}-${m}-${d} ${hh}:${mm}`;
+}
+
 // 注册 marked 扩展 (在服务器端全局注册一次即可)
 marked.use({
-  extensions: [videoEmbedExtension, timelineExtension, galleryExtension, tabsExtension, collapseExtension, cardExtension, githubExtension, buttonExtension, audioExtension, poetryExtension, headlineExtension, mermaidExtension]
+  extensions: [videoEmbedExtension, timelineExtension, galleryExtension, tabsExtension, collapseExtension, cardExtension, githubExtension, buttonExtension, audioExtension, poetryExtension, headlineExtension, mermaidExtension, urlLinkExtension]
 });
 
 /** 自定义 Shiki 转换器：为带有 showLineNumbers 的代码块添加 has-line-numbers 类名 */
@@ -244,6 +255,12 @@ export async function loadDoc(locale: Locale, slug: string, raw = false) {
     });
   };
 
+  const stats = fs.statSync(filePath);
+  const birthTime = stats.birthtime.getTime();
+  const modifyTime = stats.mtime.getTime();
+  const autoPublished = new Date(Math.min(birthTime, modifyTime));
+  const autoUpdated = new Date(Math.max(birthTime, modifyTime));
+
   // 将 Markdown 转换为 HTML，并注册自定义扩展
   const html = await marked.parse(content, { renderer });
 
@@ -259,6 +276,8 @@ export async function loadDoc(locale: Locale, slug: string, raw = false) {
     contentHtml: html,
     metadata: {
       ...data,
+      published: data.published || formatFileDate(autoPublished),
+      updated: data.updated || formatFileDate(autoUpdated),
       description: data.description || '',
       order: data.order ?? 999,
       tags: (() => {
@@ -317,6 +336,11 @@ export async function scanDocs(locale: Locale): Promise<Group[]> {
     
     if (!filePath) continue;
 
+    const stats = fs.statSync(filePath);
+    const birthTime = stats.birthtime.getTime();
+    const modifyTime = stats.mtime.getTime();
+    const effectiveCreatedAt = Math.min(birthTime, modifyTime);
+
     const isIndexFile = filePath.endsWith('index.md');
     const normalized = entry.slug === '' ? 'index' : entry.slug;
     
@@ -362,6 +386,7 @@ export async function scanDocs(locale: Locale): Promise<Group[]> {
           title: part.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
           _path: currentPath,
           order: 999,
+          createdAt: effectiveCreatedAt,
           items: []
         };
         currentLevel.push(node);
@@ -373,6 +398,9 @@ export async function scanDocs(locale: Locale): Promise<Group[]> {
           // 使用原始 entry.slug 确保点击链接能准确指向物理文件
           node.slug = entry.slug;
         }
+
+        // 更新节点的创建时间为实际文件的创建时间
+        node.createdAt = effectiveCreatedAt;
         
         // 只有当 Frontmatter 中明确提供了 title 或 order 时才覆盖
         // 这确保了 index.md 和主文件可以互补元数据
@@ -392,8 +420,8 @@ export async function scanDocs(locale: Locale): Promise<Group[]> {
 
   // 递归排序
   const sortRecursive = (items: SidebarItem[]) => {
-    // 优先按 order 排序，order 相同按标题字母排序
-    items.sort((a, b) => (a.order - b.order) || a.title.localeCompare(b.title));
+    // 排序逻辑：1. 显式指定的 order；2. 创建时间降序（最新优先）；3. 标题字母顺序
+    items.sort((a, b) => (a.order - b.order) || ((b.createdAt || 0) - (a.createdAt || 0)) || a.title.localeCompare(b.title));
     
     for (const item of items) {
       if (item.items && item.items.length > 0) {
@@ -409,6 +437,8 @@ export async function scanDocs(locale: Locale): Promise<Group[]> {
           delete item.items; // 清理空的 items
         }
       }
+      // 排序完成后清理临时字段，避免数据泄露到前端
+      delete item.createdAt;
     }
   };
 
@@ -441,13 +471,18 @@ export async function getFlatDocs(locale: Locale) {
     if (fileContent.charCodeAt(0) === 0xfeff) fileContent = fileContent.slice(1);
     
     const { data } = matter(fileContent.trim());
+    const stats = fs.statSync(filePath);
+    const birthTime = stats.birthtime.getTime();
+    const modifyTime = stats.mtime.getTime();
+    const autoPublished = new Date(Math.min(birthTime, modifyTime));
+    const autoUpdated = new Date(Math.max(birthTime, modifyTime));
     
     return {
       slug: entry.slug,
       title: data.title || entry.slug,
       description: data.description || '',
-      published: data.published || '',
-      updated: data.updated || '',
+      published: data.published || formatFileDate(autoPublished),
+      updated: data.updated || formatFileDate(autoUpdated),
       tags: Array.isArray(data.tags) ? data.tags : (typeof data.tags === 'string' ? data.tags.split(',').map(t => t.trim()) : [])
     };
   }).filter(Boolean);

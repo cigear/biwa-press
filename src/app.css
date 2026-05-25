@@ -134,8 +134,8 @@
   }
 
   .toc-wrapper a.active {
-    color: var(--color-brand);
-    font-weight: 500;
+    color: var(--foreground);
+    font-weight: 700;
   }
 
   /* 代码块复制按钮样式 */
@@ -633,7 +633,7 @@
 }
 
 .vp-github-repo-card:hover {
-  color: var(--color-brand); /* Use brand color on hover */
+  color: var(--foreground);
 }
 
 .vp-github-icon {
@@ -751,7 +751,8 @@
 }
 
 .prose a:hover {
-  color: var(--color-brand) !important;
+  color: var(--foreground) !important;
+  font-weight: bold;
 }
 
 .prose h4 {

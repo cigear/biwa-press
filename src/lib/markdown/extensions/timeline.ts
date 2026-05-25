@@ -14,11 +14,30 @@ export const timelineExtension = {
     return src.match(/^:::(timeline)/)?.index;
   },
   tokenizer(this: any, src: string): TimelineToken | undefined {
-    const rule = /^:::(timeline)[ \t]*\n([\s\S]*?)\n[ \t]*:::[ \t]*(?:\n|$)/;
-    const match = rule.exec(src);
+    const match = src.match(/^(:{3,})(timeline)[ \t]*\n/);
     if (match) {
-      const raw = match[0];
-      const text = match[2];
+      const fence = match[1];
+      const lines = src.split('\n');
+      let depth = 0;
+      let endLine = -1;
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line.startsWith(fence) && line.length > fence.length) {
+          depth++;
+        } else if (line === fence) {
+          depth--;
+          if (depth === 0) {
+            endLine = i;
+            break;
+          }
+        }
+      }
+
+      if (endLine === -1) return undefined;
+
+      const raw = lines.slice(0, endLine + 1).join('\n');
+      const text = lines.slice(1, endLine).join('\n').trim();
 
       return {
         type: 'timeline',

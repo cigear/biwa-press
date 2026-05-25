@@ -14,18 +14,37 @@ export const collapseExtension = {
     return src.match(/^:::(details)/)?.index;
   },
   tokenizer(this: any, src: string): DetailsToken | undefined {
-    // 匹配 :::details [标题] \n 内容 \n :::
-    const rule = /^:::(details)([ \t]+.*)?\n([\s\S]*?)\n[ \t]*:::[ \t]*(?:\n|$)/;
-    const match = rule.exec(src);
+    const match = src.match(/^(:{3,})(details)([ \t]+.*)?\n/);
     if (match) {
-      const raw = match[0];
-      const title = (match[2] || '').trim() || 'Details';
-      const text = match[3].trim();
+      const fence = match[1];
+      const title = (match[3] || '').trim() || 'Details';
+      
+      const lines = src.split('\n');
+      let depth = 0;
+      let endLine = -1;
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line.startsWith(fence) && line.length > fence.length) {
+          depth++;
+        } else if (line === fence) {
+          depth--;
+          if (depth === 0) {
+            endLine = i;
+            break;
+          }
+        }
+      }
+
+      if (endLine === -1) return undefined;
+
+      const raw = lines.slice(0, endLine + 1).join('\n');
+      const text = lines.slice(1, endLine).join('\n').trim();
 
       return {
         type: 'details',
-        raw: raw,
-        title: title,
+        raw,
+        title,
         tokens: this.lexer.blockTokens(text, [])
       };
     }

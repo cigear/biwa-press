@@ -36,8 +36,9 @@ export const cardExtension = {
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
-        if (line.startsWith(fence) && line.length > fence.length) depth++;
-        else if (line === fence) {
+        if (line.startsWith(fence) && line.length > fence.length) {
+          depth++;
+        } else if (line === fence) {
           depth--;
           if (depth === 0) {
             endLine = i;
