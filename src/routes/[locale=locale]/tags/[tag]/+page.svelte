@@ -6,13 +6,13 @@
   import type { Locale } from "$lib/config/locales";
   import type { PageData } from "./$types"; // 导入 PageData 类型
 
-  let { data }: { data: PageData } = $props(); // 明确指定 data 的类型
+  let { data }: { data: PageData & { collection: string } } = $props(); // 明确指定 data 的类型，并添加 collection
 </script>
 
-<Header locale={data.locale as Locale} groups={data.sidebar ?? []} currentPath={data.path} />
+<Header locale={data.locale as Locale} groups={data.sidebar ?? []} currentPath={data.path} collection={data.collection} />
 
 <div class="mx-auto grid min-h-[calc(100vh-3.5rem)] max-w-7xl grid-cols-1 px-4 lg:grid-cols-[260px_1fr] lg:gap-10 bg-background text-foreground">
-  <Sidebar locale={data.locale as Locale} sidebar={data.sidebar ?? []} currentPath={data.path} />
+  <Sidebar locale={data.locale as Locale} sidebar={data.sidebar ?? []} currentPath={data.path} collection={data.collection} />
 
   <main class="flex-1 pb-10 pt-4 lg:pb-12 lg:pt-6 min-w-0">
     <div class="mb-10 border-b border-border pb-8">
@@ -29,10 +29,14 @@
         {#each data.docs as doc}
           <article class="group relative flex flex-col items-start">
             <h2 class="text-xl font-bold text-foreground transition-colors">
-              <a href="/{data.locale}/docs/{doc.slug}">
+              <a href="/{data.locale}/{doc.collection}/{doc.slug}">
                 <!-- 仿 Tailwind UI 的交互背景效果 -->
                 <span class="absolute -inset-x-4 -inset-y-6 z-0 scale-95 bg-secondary opacity-0 transition group-hover:scale-100 group-hover:opacity-100 sm:-inset-x-6 sm:rounded-2xl"></span>
-                <span class="relative z-10">{doc.title}</span>
+                <span class="relative z-10">
+                  <!-- 添加分类前缀，样式参考搜索框 -->
+                  <span class="text-[10px] uppercase font-bold text-muted-foreground/60 mr-1.5">{doc.collection}:</span>
+                  {doc.title}
+                </span>
               </a>
             </h2>
 

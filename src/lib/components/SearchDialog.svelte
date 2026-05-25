@@ -1,12 +1,15 @@
 <script lang="ts">
   import { Dialog } from 'bits-ui';
+  import { page } from '$app/state';
   import { getLocaleConfig, type Locale } from '$lib/config/locales';
   import type { SearchEntry } from '$lib/types';
   import { Search } from '@lucide/svelte';
+  import { site } from '$lib/config/site';
 
   let open = $state(false);
   let query = $state('');
-  let results = $state<SearchEntry[]>([]);
+  // 使用交叉类型扩展 SearchEntry，增加缺失的 collection 属性
+  let results = $state<(SearchEntry & { collection: string })[]>([]);
   let isLoading = $state(false);
 
   let { locale, onSelect, currentPath }: { locale: Locale; onSelect?: () => void; currentPath: string } = $props();
@@ -35,6 +38,7 @@
     const timer = setTimeout(async () => {
       isLoading = true;
       try {
+        // 移除 collection 参数，使搜索请求默认执行全站检索
         const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&lang=${locale}`, {
           signal: controller.signal
         });
@@ -93,7 +97,10 @@
                 onSelect?.();
               }}
             >
-              <span class="block text-sm font-medium text-foreground">{formatTitle(result.title)}</span>
+              <span class="block text-sm font-medium text-foreground">
+                <span class="text-[10px] uppercase font-bold text-muted-foreground/60 mr-1.5">{result.collection}:</span>
+                {formatTitle(result.title)}
+              </span>
               {#if result.description}
                 <span class="mt-1 block text-sm text-muted-foreground">{result.description}</span>
               {/if}

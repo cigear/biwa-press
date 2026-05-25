@@ -13,8 +13,9 @@
   let {
     locale,
     groups: initialGroups = [],
-    currentPath
-  }: { locale: Locale, groups?: Group[], currentPath: string } = $props();
+    currentPath,
+    collection // Make collection property optional
+  }: { locale: Locale, groups?: Group[], currentPath: string, collection?: string } = $props();
 
   // 顶部导航（同步）
   const currentLocale = $derived(getLocaleConfig(locale));
@@ -150,4 +151,4 @@
   </div>
 </header>
 
-<Drawer bind:open {locale} {groups} {currentPath} />
+<Drawer bind:open {locale} {groups} {currentPath} {collection} />

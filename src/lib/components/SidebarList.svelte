@@ -4,14 +4,16 @@
   import { goto } from '$app/navigation';
   import SidebarList from './SidebarList.svelte';
   import { ChevronRight } from '@lucide/svelte';
+  import { site } from '$lib/config/site';
 
   let {
     items,
     locale,
     depth = 0,
     expandedGroups: passedGroups,
-    currentPath // Add currentPath property
-  }: { items: Group[], locale: string, depth?: number, expandedGroups?: Record<string, boolean>, currentPath: string } = $props();
+    currentPath, // Add currentPath property
+    collection // Add collection property
+  }: { items: Group[], locale: string, depth?: number, expandedGroups?: Record<string, boolean>, currentPath: string, collection?: string } = $props();
 
   // Initialize local state. In Svelte 5, $state() must be a top-level variable declaration.
   const internalState = $state<Record<string, boolean>>({});
@@ -20,6 +22,14 @@
   const expandedGroups = $derived(passedGroups ?? internalState);
 
   // SidebarList directly uses the passed currentPath property for highlighting
+
+  // 从路径中识别内容类型 (约定: /[locale]/[collection]/[...slug])
+  // 健壮性修复：优先使用传入的 collection，其次尝试从路径解析，最后回退到 'docs'
+  const collectionType = $derived.by(() => { // Renamed to collectionType to avoid conflict with prop
+    if (collection && site.collections.includes(collection)) return collection;
+    const pathSegment = currentPath.split('/')[2];
+    return (site.collections.includes(pathSegment)) ? pathSegment : 'docs';
+  });
 
   function handleGroupClick(item: Group) {
     // 直接修改原始状态对象（Proxy）
@@ -35,10 +45,12 @@
       const target = passedGroups ?? internalState;
       let isActive = false;
       for (const item of list) {
-        const href = item.slug ? `/${locale}/docs/${item.slug}` : undefined;
+        const href = item.slug 
+          ? (item.slug === 'index' ? `/${locale}/${collectionType}` : `/${locale}/${collectionType}/${item.slug}`) 
+          : undefined;
         if (href === currentPath) isActive = true;
         if (item.items && checkActive(item.items, currentPath)) {
-          target[item.title] = true;
+          if (item.title) target[item.title] = true;
           isActive = true;
         }
       }
@@ -54,7 +66,9 @@
     <li class="relative">
       <div class="flex items-center justify-between gap-2">
         {#if item.slug}
-          {@const href = `/${locale}/docs/${item.slug}`}
+          {@const href = item.slug === 'index' 
+            ? `/${locale}/${collectionType}` 
+            : `/${locale}/${collectionType}/${item.slug}`}
           <a
             {href}
             class="flex-1 py-1.5 text-sm transition-colors {currentPath === href
@@ -92,7 +106,7 @@
 
       {#if hasChildren && expandedGroups[item.title]}
         <!-- 递归调用自身，且根据展开状态判断是否显示 -->
-        <SidebarList items={item.items ?? []} {locale} depth={depth + 1} expandedGroups={passedGroups ?? internalState} {currentPath} />
+        <SidebarList items={item.items ?? []} {locale} depth={depth + 1} expandedGroups={passedGroups ?? internalState} {currentPath} collection={collectionType} />
       {/if}
     </li>
   {/each}

@@ -1,5 +1,6 @@
 import type { Handle } from '@sveltejs/kit';
 import { locales } from '$lib/config/locales'; // Import locales config
+import { site } from '$lib/config/site';
 
 export const handle: Handle = async ({ event, resolve }) => {
   const { pathname } = event.url;
@@ -31,7 +32,11 @@ export const handle: Handle = async ({ event, resolve }) => {
   // 核心修复：只对明确要求 HTML 的浏览器导航请求进行页面逻辑处理
   const isPageRequest = event.request.headers.get('accept')?.includes('text/html');
 
-  if (urlLocale && !supportedLocaleCodes.includes(urlLocale) && isPageRequest) {
+  // 逻辑修正：如果第一个路径段既不是语言代码，也不是集合名称，才进行首页重定向
+  if (urlLocale && 
+      !supportedLocaleCodes.includes(urlLocale) && 
+      !site.collections.includes(urlLocale) && 
+      isPageRequest) {
     const locale = getPreferredLocale();
     return new Response(null, {
       status: 302,
@@ -50,6 +55,15 @@ export const handle: Handle = async ({ event, resolve }) => {
   // 重点修复：检查 Accept 头，确保只对“页面请求”（HTML）进行重定向。
   // 如果是 JS/CSS/图片等资源 404，必须返回原始 404 响应，否则会导致浏览器解析错误并进入死循环。
   if (response.status === 404 && isPageRequest) {
+    // 🌟 核心修复：如果 404 路径是以有效集合开头的（例如 /moments/index），
+    // 将其重定向到带语言环境的集合根路径（例如 /zh/moments）
+    if (urlLocale && site.collections.includes(urlLocale)) {
+      return new Response(null, {
+        status: 302,
+        headers: { location: `/${getPreferredLocale()}/${urlLocale}` }
+      });
+    }
+
     const currentLocale = (urlLocale && supportedLocaleCodes.includes(urlLocale)) 
       ? urlLocale 
       : getPreferredLocale();

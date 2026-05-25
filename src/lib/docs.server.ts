@@ -79,20 +79,25 @@ function getSlugFromAbsolutePath(absolutePath: string, docsRoot: string): string
 /**
  * 加载并无条件渲染一个 Markdown 文件
  */
-export async function loadMarkdownFile(locale: Locale, slug: string) {
-  return loadDoc(locale, slug, true);
+export async function loadMarkdownFile(collection: string, locale: Locale, slug: string = '') {
+  return loadDoc(collection, locale, slug, true);
 }
 
 /**
  * 加载文档。
  * @param raw 如果为 true，则跳过目录文件的子文件查找逻辑，直接渲染文件内容。
  */
-export async function loadDoc(locale: Locale, slug: string, raw = false) {
-  const normalized = slug === '' ? 'index' : slug;
-  const docsRoot = DocRepository.getDocsRoot();
-  const filePath = DocRepository.resolvePath(locale, slug);
+export async function loadDoc(collection: string, locale: Locale, slug: string = '', raw = false) {
+  const collectionName = collection || 'docs';
+  const collectionRoot = path.resolve(process.cwd(), collectionName);
+  const filePath = DocRepository.resolvePath(collectionName, locale, slug);
+
   if (!filePath) {
-    throw redirect(307, `/${locale}/`);
+    // 🌟 核心修复：如果找不到文档，跳转到对应的集合根目录，而不是全局根目录
+    const target = isLocale(locale) 
+      ? (collectionName !== 'docs' ? `/${locale}/${collectionName}` : `/${locale}/`)
+      : '/ja/';
+    throw redirect(307, target);
   }
 
   // 1. 预处理内容：移除 UTF-8 BOM 并修剪空白，确保解析器绝对稳定
@@ -108,7 +113,8 @@ export async function loadDoc(locale: Locale, slug: string, raw = false) {
   try {
     const parsed = matter(fileContent);
     data = parsed.data;
-    content = parsed.content;
+    // index.md 平时作为目录索引时不显示内容，但显式 loadMarkdownFile 时需要内容
+    content = (filePath.endsWith('index.md') && !raw) ? '' : parsed.content;
 
     // 健壮性补丁：如果 gray-matter 解析失败但明显有 Frontmatter 结构，手动提取 title
     if (Object.keys(data).length === 0 && fileContent.startsWith('---')) {
@@ -120,9 +126,8 @@ export async function loadDoc(locale: Locale, slug: string, raw = false) {
       }
     }
 
+    // 正常的文档访问逻辑：如果是 index.md，则自动查找并重定向到目录下 order 最小的第一个子文件
     if (filePath.endsWith('index.md') && !raw) {
-      // 根据要求：index.md 本身不显示内容。
-      // 如果访问的是目录 URL（匹配到 index.md），则自动查找目录下 order 最小的第一个有效子文件作为内容显示。
       const dir = path.dirname(filePath);
       const siblings = DocRepository.readDir(dir)
         .filter(f => f.endsWith('.md') && f.toLowerCase() !== 'index.md')
@@ -136,8 +141,10 @@ export async function loadDoc(locale: Locale, slug: string, raw = false) {
       if (siblings.length > 0) {
         content = '';
         const targetFilePath = path.join(dir, siblings[0].filename);
-        const targetSlug = getSlugFromAbsolutePath(targetFilePath, docsRoot);
-        throw redirect(307, `/${locale}/docs/${targetSlug}`);
+        const targetSlug = getSlugFromAbsolutePath(targetFilePath, collectionRoot);
+        if (targetSlug !== slug) { // 只有在目标路径不同时才重定向，防止死循环
+          throw redirect(307, `/${locale}/${collectionName}/${targetSlug}`);
+        }
       }
     }
   } catch (e: any) {
@@ -185,12 +192,12 @@ export async function loadDoc(locale: Locale, slug: string, raw = false) {
   const renderer = new Renderer() as Renderer & {
     currentLocale: Locale;
     currentFilePath: string;
-    docsRoot: string;
+    collectionRoot: string;
   };
 
   renderer.currentLocale = locale;
   renderer.currentFilePath = filePath;
-  renderer.docsRoot = docsRoot;
+  renderer.collectionRoot = collectionRoot;
 
   // 配置图片渲染：点击利用浏览器 Fullscreen API 放大
   renderer.image = (...args: any[]) => {
@@ -210,8 +217,8 @@ export async function loadDoc(locale: Locale, slug: string, raw = false) {
     if (href && !href.startsWith('http') && !href.startsWith('/') && href.endsWith('.md')) {
       const currentDir = path.dirname(filePath); // Use the current file's directory
       const absoluteLinkedFilePath = path.resolve(currentDir, href);
-      const resolvedSlug = getSlugFromAbsolutePath(absoluteLinkedFilePath, docsRoot);
-      const finalHref = `/${locale}/docs/${resolvedSlug}`;
+      const resolvedSlug = getSlugFromAbsolutePath(absoluteLinkedFilePath, collectionRoot);
+      const finalHref = `/${locale}/${collection}/${resolvedSlug}`;
       return `<a href="${finalHref}"${title ? ` title="${title}"` : ''}>${text}</a>`;
     }
     // Default behavior for external links, absolute paths, or non-Markdown links
@@ -265,12 +272,14 @@ export async function loadDoc(locale: Locale, slug: string, raw = false) {
   const html = await marked.parse(content, { renderer });
 
   // 严格优先级确定最终标题，与 search.ts 逻辑同步
-  const lastPart = slug.split('/').pop() || normalized;
+  const lastPart = slug.split('/').pop() || '';
   const prettyFileName = lastPart.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   const rawTitle = data.title;
+  
+  // 最终标题逻辑：Frontmatter title > 文件名美化 > Collection名称 (如果是根 index)
   const finalTitle = (rawTitle && typeof rawTitle === 'string' && rawTitle.trim().length > 0 && rawTitle !== 'undefined' && rawTitle !== 'null')
     ? rawTitle.trim()
-    : prettyFileName;
+    : (prettyFileName || collectionName.charAt(0).toUpperCase() + collectionName.slice(1));
 
   return {
     contentHtml: html,
@@ -296,10 +305,10 @@ export async function loadDoc(locale: Locale, slug: string, raw = false) {
 /* ---------------------------------------------
  * getDocEntries
  * --------------------------------------------- */
-export function getDocEntries() {
-  const entries: { locale: Locale; slug: string }[] = [];
+export function getDocEntries(collection: string) {
+  const entries: { locale: Locale; slug: string; fullPath: string }[] = [];
 
-  const docsRoot = DocRepository.getDocsRoot();
+  const collectionRoot = path.resolve(process.cwd(), collection || 'docs');
   function walk(dir: string) {
     const files = fs.readdirSync(dir);
     for (const file of files) {
@@ -307,34 +316,32 @@ export function getDocEntries() {
       if (fs.statSync(fullPath).isDirectory()) {
         walk(fullPath);
       } else if (file.endsWith('.md')) {
-        const relative = path.relative(docsRoot, fullPath).replace(/\\/g, '/').replace(/\.md$/, '');
+        const relative = path.relative(collectionRoot, fullPath).replace(/\\/g, '/').replace(/\.md$/, '');
         const [locale, ...slugParts] = relative.split('/');
         if (isLocale(locale)) {
           let slug = slugParts.join('/');
           if (slug.endsWith('/index')) slug = slug.replace(/\/index$/, '');
           if (slug === 'index') slug = '';
-          entries.push({ locale, slug });
+          entries.push({ locale, slug, fullPath });
         }
       }
     }
   }
 
-  if (DocRepository.exists(docsRoot)) walk(docsRoot);
+  if (fs.existsSync(collectionRoot)) walk(collectionRoot);
   return entries;
 }
 
 /**
  * 递归扫描文档生成树状结构
  */
-export async function scanDocs(locale: Locale): Promise<Group[]> {
-  const entries = getDocEntries().filter((e) => e.locale === locale);
+export async function scanDocs(collection: string, locale: Locale): Promise<Group[]> {
+  const entries = getDocEntries(collection).filter((e) => e.locale === locale);
   const root: SidebarItem[] = [];
 
   for (const entry of entries) {
     const parts = entry.slug === '' ? [] : entry.slug.split('/');
-    const filePath = DocRepository.resolvePath(locale, entry.slug);
-    
-    if (!filePath) continue;
+    const filePath = entry.fullPath; // 直接使用原始物理路径，不再重新拼接
 
     const stats = fs.statSync(filePath);
     const birthTime = stats.birthtime.getTime();
@@ -459,13 +466,13 @@ export function clearDocCache() {
 /**
  * 获取指定语言下所有文档的扁平化列表（带元数据）
  */
-export async function getFlatDocs(locale: Locale) {
-  if (!dev && flatDocsCache[locale]) return flatDocsCache[locale];
+export async function getFlatDocs(collection: string, locale: Locale) {
+  const cacheKey = `${collection}:${locale}`;
+  if (!dev && flatDocsCache[cacheKey]) return flatDocsCache[cacheKey];
 
-  const entries = getDocEntries().filter((e) => e.locale === locale);
+  const entries = getDocEntries(collection).filter((e) => e.locale === locale);
   const docs = entries.map((entry) => {
-    const filePath = DocRepository.resolvePath(locale, entry.slug);
-    if (!filePath) return null;
+    const filePath = entry.fullPath;
 
     let fileContent = DocRepository.readText(filePath);
     if (fileContent.charCodeAt(0) === 0xfeff) fileContent = fileContent.slice(1);
@@ -479,6 +486,7 @@ export async function getFlatDocs(locale: Locale) {
     
     return {
       slug: entry.slug,
+      collection,
       title: data.title || entry.slug,
       description: data.description || '',
       published: data.published || formatFileDate(autoPublished),
@@ -487,22 +495,23 @@ export async function getFlatDocs(locale: Locale) {
     };
   }).filter(Boolean);
 
-  flatDocsCache[locale] = docs;
+  flatDocsCache[cacheKey] = docs;
   return docs;
 }
 
 /* ---------------------------------------------
- * getSidebar(locale) → 同步返回 Group[]
+ * getSidebar(collection, locale) → 同步返回 Group[]
  * （★ Header / Sidebar 可以直接 each）
  * --------------------------------------------- */
-export async function getSidebar(locale: Locale): Promise<Group[]> {
+export async function getSidebar(collection: string, locale: Locale): Promise<Group[]> {
   if (dev || process.env.BIWA_DISABLE_CACHE === 'true') {
     // 开发环境或显式禁用缓存时，支持实时预览磁盘文件变化
-    return await scanDocs(locale);
+    return await scanDocs(collection, locale);
   }
   
-  if (!sidebarCache[locale]) {
-    sidebarCache[locale] = await scanDocs(locale);
+  const cacheKey = `${collection}:${locale}`;
+  if (!sidebarCache[cacheKey]) {
+    sidebarCache[cacheKey] = await scanDocs(collection, locale);
   }
-  return sidebarCache[locale];
+  return sidebarCache[cacheKey];
 }

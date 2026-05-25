@@ -4,6 +4,8 @@
   import type { Group } from '$lib/docs';
   import { site } from '$lib/config/site';
   import DocLayout from '$lib/components/DocLayout.svelte';
+  import BlogLayout from '$lib/components/BlogLayout.svelte';
+  import NewsLayout from '$lib/components/NewsLayout.svelte';
 
   let { data }: { data: { 
     locale: Locale; 
@@ -11,6 +13,7 @@
     metadata: Record<string, any>; 
     toc: any[]; 
     sidebar: Group[];
+    collection: string;
     path: string;
   } } = $props();
 
@@ -25,9 +28,20 @@
       ? (data.metadata.image.startsWith('http') ? data.metadata.image : `${baseUrl}${data.metadata.image.startsWith('/') ? '' : '/'}${data.metadata.image}`)
       : `${baseUrl}/images/og-image.png`
   );
+
+  // Map the collection names to their respective layout components
+  const layouts: Record<string, any> = {
+    docs: DocLayout,
+    moments: DocLayout,
+    blogs: BlogLayout,
+    news: NewsLayout
+  };
+
+  // Dynamically select the layout based on the current collection
+  const SelectedLayout = $derived(layouts[data.collection] || DocLayout);
 </script>
 
-<DocLayout
+<SelectedLayout
   locale={data.locale}
   metadata={data.metadata}
   toc={data.toc}
@@ -42,4 +56,4 @@
     prose-code:before:content-none prose-code:after:content-none">
     {@html data.contentHtml}
   </div>
-</DocLayout>
+</SelectedLayout>

@@ -10,15 +10,22 @@
     open = $bindable(false), 
     locale, 
     groups,
-    currentPath // Add currentPath to props
+    currentPath, // Add currentPath to props
+    collection
   }: { 
     open: boolean; 
     locale: Locale; 
     groups: Group[]; 
     currentPath: string; // Add type definition
+    collection?: string;
   } = $props();
 
-  // currentPath is now passed as a prop, no longer derived internally
+  // 内部识别 collection 类型
+  const collectionType = $derived.by(() => {
+    if (collection) return collection;
+    const pathSegment = currentPath.split('/')[2];
+    return pathSegment || 'docs';
+  });
 
   // 追踪侧边栏分组展开状态
   let expandedGroups = $state<Record<string, boolean>>({});
@@ -35,7 +42,9 @@
     function checkActive(items: Group[], currentPath: string): boolean { // Add currentPath parameter
       let isActive = false;
       for (const item of items) {
-        const href = item.slug ? `/${locale}/docs/${item.slug}` : undefined;
+        const href = item.slug 
+          ? (item.slug === 'index' ? `/${locale}/${collectionType}` : `/${locale}/${collectionType}/${item.slug}`) 
+          : undefined;
         if (href === path) isActive = true;
         if (item.items && checkActive(item.items, currentPath)) { // Pass currentPath in recursive call
           expandedGroups[item.title] = true;
@@ -53,7 +62,9 @@
   <div class="mb-1">
     <div class="flex items-center justify-between gap-2">
       {#if item.slug}
-        {@const href = `/${locale}/docs/${item.slug}`}
+        {@const href = item.slug === 'index' 
+          ? `/${locale}/${collectionType}` 
+          : `/${locale}/${collectionType}/${item.slug}`}
         <a
           {href}
           class="flex-1 py-1.5 px-2 -mx-2 text-sm transition-colors rounded-md {currentPath === href

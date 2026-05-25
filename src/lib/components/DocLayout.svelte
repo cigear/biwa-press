@@ -26,6 +26,7 @@
     groups: initialGroups = [],
     currentPath, // 添加 currentPath 属性
     slug, // 添加 slug 属性
+    collection: collectionProp // Alias the prop to avoid name collision with the derived state
   }: {
     locale: Locale;
     metadata: Record<string, any>;
@@ -34,6 +35,7 @@
     groups?: Group[];
     currentPath: string; // 类型定义
     slug?: string; // 类型定义，可以是 undefined
+    collection?: string; // Make collection prop optional
   } = $props();
 
   // 关键：当 locale 属性改变时，同步更新 svelte-i18n 的全局状态
@@ -43,6 +45,13 @@
 
   let fetchedGroups = $state<Group[] | null>(null);
   let groups = $derived(fetchedGroups ?? initialGroups);
+
+  // 统一的集合识别逻辑
+  const collectionType = $derived.by(() => { // Renamed to collectionType to avoid conflict with prop
+    if (collectionProp) return collectionProp;
+    const pathSegment = currentPath.split('/')[2];
+    return pathSegment || 'docs';
+  });
 
   // 检查是否有任何元数据需要显示在页眉中，防止出现空白区域
   const hasMetadataHeader = $derived(
@@ -63,9 +72,12 @@
     function flatten(items: Group[]) {
       for (const item of items) {
         if (item.slug) {
+          const href = item.slug === 'index' 
+            ? `/${locale}/${collectionType}` 
+            : `/${locale}/${collectionType}/${item.slug}`;
           flat.push({
             title: item.title,
-            href: `/${locale}/docs/${item.slug}`,
+            href
           });
         }
         if (item.items) flatten(item.items);
@@ -328,12 +340,12 @@
   });
 </script>
 
-<Header {locale} {groups} {currentPath} />
+<Header {locale} {groups} {currentPath} collection={collectionType} />
 
 <div
   class="mx-auto grid min-h-[calc(100vh-3.5rem)] max-w-7xl grid-cols-1 px-4 lg:grid-cols-[260px_1fr_200px] lg:gap-10 bg-background text-foreground"
 >
-  <Sidebar {locale} sidebar={groups} {currentPath} />
+  <Sidebar {locale} sidebar={groups} {currentPath} collection={collectionType} />
 
   <div class="flex flex-col min-w-0">
     <Breadcrumb {locale} {groups} {currentPath} />
@@ -376,7 +388,7 @@
               >
               {#each metadata.tags as tag}
                 <a
-                  href="/{locale}/tags/{tag}" 
+                href="/{locale}/tags/{tag}{collectionType !== 'docs' ? `?from=${collectionType}` : ''}" 
                   class="inline-flex items-center rounded-md border border-border bg-secondary px-2.5 py-0.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary hover:text-foreground"
                 >
                   {tag}

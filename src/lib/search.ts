@@ -5,6 +5,7 @@ import { DocRepository } from '$lib/infrastructure/storage/doc-repository';
 import matter from 'gray-matter';
 import { marked, Renderer, type Token, type Tokens } from 'marked';
 import { create, insert, search, type Orama } from '@orama/orama';
+import { site } from '$lib/config/site';
 
 /** 内存缓存，避免频繁扫描磁盘 */
 let searchCache: Record<string, {
@@ -26,8 +27,8 @@ function toPlainText(markdown: string) {
 }
 
 /** 扫描磁盘生成指定语言的搜索索引 */
-export async function buildSearchIndex(locale: Locale) {
-  const docsRoot = DocRepository.getDocsRoot();
+export async function buildSearchIndex(collection: string, locale: Locale) {
+  const docsRoot = DocRepository.getDocsRoot(collection);
   const localeDir = path.join(docsRoot, locale);
   const entries: SearchEntry[] = [];
 
@@ -44,6 +45,7 @@ export async function buildSearchIndex(locale: Locale) {
       title: 'string',
       description: 'string',
       content: 'string',
+      collection: 'string',
       slug: 'string',
     },
     components: {
@@ -128,7 +130,8 @@ export async function buildSearchIndex(locale: Locale) {
         const entry = {
           locale,
           slug,
-          href: `/${locale}/docs/${slug}`,
+          collection,
+          href: `/${locale}/${collection}/${slug}`,
           title,
           description,
           content: searchContent
@@ -155,39 +158,47 @@ export function clearSearchCache() {
 }
 
 /** 获取完整索引 (用于 SSG 预渲染或客户端搜索) */
-export async function getFullIndex(locale: Locale): Promise<SearchEntry[]> {
-  if (!searchCache[locale]) {
-    searchCache[locale] = await buildSearchIndex(locale);
+export async function getFullIndex(locale: Locale, collection: string = 'docs'): Promise<SearchEntry[]> {
+  const cacheKey = `${collection}:${locale}`;
+  if (!searchCache[cacheKey]) {
+    searchCache[cacheKey] = await buildSearchIndex(collection, locale);
   }
-  return searchCache[locale].entries;
+  return searchCache[cacheKey].entries;
 }
 
-export async function searchDocs(locale: Locale, query: string) {
-  if (!searchCache[locale]) {
-    searchCache[locale] = await buildSearchIndex(locale);
-  }
+export async function searchDocs(locale: Locale, query: string, collection?: string) {
+  // 如果明确指定了集合，则只搜索该集合；否则执行全局搜索（搜索所有已知集合）
+  const searchTargets = collection && site.collections.includes(collection) 
+    ? [collection] 
+    : site.collections;
 
-  const { index } = searchCache[locale];
-  if (!index) return [];
-
-  const term = query.trim().toLocaleLowerCase(); // 确保搜索词也被小写化
+  const term = query.trim().toLowerCase();
   if (!term) return [];
 
-  // 执行 Orama 搜索
-  const searchResult = await search(index, {
-    term,
-    properties: ['title', 'description', 'content'],
-    boost: {
-      title: 2,
-      description: 1.5,
-      content: 1
-    },
-    limit: 8
-  });
+  const results = await Promise.all(
+    searchTargets.map(async (col) => {
+      const cacheKey = `${col}:${locale}`;
+      if (!searchCache[cacheKey]) {
+        searchCache[cacheKey] = await buildSearchIndex(col, locale);
+      }
 
-  // 将 Orama 的结果映射回原始 SearchEntry
-  return searchResult.hits.map(hit => ({
-    ...hit.document,
-    score: hit.score
-  }));
+      const { index } = searchCache[cacheKey];
+      if (!index) return [];
+
+      const searchResult = await search(index, {
+        term,
+        properties: ['title', 'description', 'content'],
+        boost: { title: 2, description: 1.5, content: 1 },
+        limit: 10
+      });
+
+      return searchResult.hits.map(hit => ({
+        ...hit.document,
+        score: hit.score
+      }));
+    })
+  );
+
+  // 合并来自不同集合的结果，按相关度分数排序，并取前 8 条
+  return results.flat().sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 8);
 }
