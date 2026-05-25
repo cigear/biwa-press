@@ -437,7 +437,7 @@
   </div>
 
   <aside class="lg:block bg-background">
-    <DocToc items={toc} minDepth={2} maxDepth={3} />
+    <DocToc items={toc} minDepth={2} maxDepth={6} />
   </aside>
 </div>
 

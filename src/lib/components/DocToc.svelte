@@ -18,7 +18,7 @@
   }>();
 
   const minDepth = $derived(props.minDepth ?? 2);
-  const maxDepth = $derived(props.maxDepth ?? 3);
+  const maxDepth = $derived(props.maxDepth ?? 6);
 
   let activeSlug = $state<string | null>(null);
   let isClicking = false;
@@ -237,6 +237,21 @@
   .biwa-toc__item.depth-3 button {
     padding-left: 2rem;
     font-size: 0.9em;
+  }
+
+  .biwa-toc__item.depth-4 button {
+    padding-left: 3rem;
+    font-size: 0.85em;
+  }
+
+  .biwa-toc__item.depth-5 button {
+    padding-left: 4rem;
+    font-size: 0.85em;
+  }
+
+  .biwa-toc__item.depth-6 button {
+    padding-left: 5rem;
+    font-size: 0.85em;
   }
 
   .biwa-toc__item button:hover {
