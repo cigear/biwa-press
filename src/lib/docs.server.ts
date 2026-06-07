@@ -156,7 +156,7 @@ export async function loadDoc(collection: string, locale: Locale, slug: string =
   if (!highlighterPromise) {
     highlighterPromise = createHighlighter({
       themes: ['github-dark'],
-      langs: ['javascript', 'typescript', 'bash', 'css', 'html', 'json', 'svelte', 'text', 'markdown']
+      langs: ['javascript', 'typescript', 'bash', 'css', 'html', 'json', 'svelte', 'text', 'markdown', 'sql']
     });
   }
   const highlighter = await highlighterPromise;

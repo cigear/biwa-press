@@ -354,7 +354,7 @@
       {#if hasMetadataHeader}
         <header class="mb-10 flex flex-col gap-4">
           {#if metadata.description}
-            <div class="text-3xl font-extrabold text-foreground md:text-4xl">
+            <div class="text-2xl font-extrabold text-foreground md:text-3xl">
               {metadata.description}
             </div>
           {/if}
